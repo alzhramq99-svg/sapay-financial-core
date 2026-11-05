@@ -1,0 +1,48 @@
+name: SApay CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'sapay-core 15/**'
+      - '.github/workflows/sapay-ci.yml'
+  push:
+    branches: [main, 'recovery/**']
+    paths:
+      - 'sapay-core 15/**'
+      - '.github/workflows/sapay-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sapay-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Unit tests and production build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 'sapay-core 15'
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: 'sapay-core 15/package-lock.json'
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test -- --ci
+
+      - name: Build production application
+        run: npm run build
