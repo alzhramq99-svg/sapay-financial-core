@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SApay | محفظتك الرقمية</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f2f5f8;color:#15243b;font-family:Arial,sans-serif}
+header{background:#102541;color:white;padding:24px 20px;border-radius:0 0 24px 24px}
+.brand{color:#62d6a1;font-size:28px;font-weight:bold}
+header p{color:#d8e3ef}
+main{max-width:600px;margin:auto;padding:18px}
+.card{background:white;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 4px 18px #1025410c}
+.balance{background:#153b53;color:white}
+.balance small{color:#c5e7dc}
+.amount{font-size:32px;font-weight:bold;margin:12px 0}
+.actions{display:flex;gap:10px}
+button{border:0;border-radius:12px;padding:13px;background:#13845e;color:white;font-size:16px;cursor:pointer}
+.actions button{flex:1}
+input{width:100%;padding:13px;border:1px solid #ccd5df;border-radius:10px;margin:8px 0 12px;font-size:16px}
+h2{font-size:19px;margin-top:0}
+.item{padding:12px 0;border-bottom:1px solid #edf0f3;display:flex;justify-content:space-between;gap:8px}
+.muted{color:#748196;font-size:13px}
+.notice{font-size:12px;color:#68758a;line-height:1.7;text-align:center}
+</style>
+</head>
+<body>
+<header>
+<div class="brand">SApay</div>
+<p>محفظتك الرقمية — خدمات مالية تجريبية</p>
+</header>
+<main>
+<section class="card balance">
+<small>الرصيد التجريبي</small>
+<div class="amount"><span id="balance">12450</span> SDG</div>
+<small>هذا رصيد افتراضي للعرض فقط</small>
+</section>
+<div class="actions">
+<button onclick="showForm('send')">إرسال تجريبي</button>
+<button onclick="showForm('receive')">استقبال تجريبي</button>
+</div>
+<section class="card" id="form" hidden>
+<h2 id="formTitle">عملية تجريبية</h2>
+<label>اسم المستفيد أو المرسل</label>
+<input id="person" placeholder="أدخل الاسم">
+<label>المبلغ بالجنيه السوداني</label>
+<input id="amount" type="number" min="1" placeholder="مثال: 500">
+<button onclick="submitTransfer()">تأكيد العملية التجريبية</button>
+<p id="message" class="muted"></p>
+</section>
+<section class="card">
+<h2>خدمات المحفظة</h2>
+<div class="item"><span>التحويل بين المحافظ</span><span>قريبًا</span></div>
+<div class="item"><span>التحويل إلى البنوك السودانية</span><span>تجريبي</span></div>
+<div class="item"><span>الخدمات الحكومية والاتصالات</span><span>قريبًا</span></div>
+<div class="item"><span>التحويلات الدولية</span><span>قريبًا</span></div>
+</section>
+<section class="card">
+<h2>سجل العمليات</h2>
+<div id="history"><p class="muted">لا توجد عمليات بعد.</p></div>
+</section>
+<p class="notice">نسخة تجريبية فقط. لا توجد تحويلات مالية حقيقية أو اتصالات مصرفية. لا تمثل هذه الواجهة ترخيصًا ماليًا.</p>
+</main>
+<script>
+let balance=12450, mode='send';
+function showForm(m){
+ mode=m;
+ document.getElementById('form').hidden=false;
+ document.getElementById('formTitle').textContent=m==='send'?'إرسال تجريبي':'استقبال تجريبي';
+ document.getElementById('message').textContent='';
+}
+function submitTransfer(){
+ const name=document.getElementById('person').value.trim();
+ const amount=Number(document.getElementById('amount').value);
+ const msg=document.getElementById('message');
+ if(!name||!Number.isFinite(amount)||amount<=0){msg.textContent='أدخل الاسم والمبلغ الصحيح.';return;}
+ if(mode==='send'&&amount>balance){msg.textContent='الرصيد التجريبي غير كافٍ.';return;}
+ balance+=mode==='send'?-amount:amount;
+ document.getElementById('balance').textContent=balance.toLocaleString('en-US');
+ const row=document.createElement('div');row.className='item';
+ const left=document.createElement('span');left.textContent=(mode==='send'?'إرسال إلى ':'استقبال من ')+name;
+ const right=document.createElement('span');right.textContent=(mode==='send'?'-':'+')+amount.toLocaleString('en-US')+' SDG';
+ row.append(left,right);
+ const history=document.getElementById('history');
+ if(history.querySelector('.muted'))history.innerHTML='';
+ history.prepend(row);
+ msg.textContent='تم تسجيل العملية داخل النموذج التجريبي فقط.';
+ document.getElementById('person').value='';
+ document.getElementById('amount').value='';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "name": "sapay-financial-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SApay demo-only financial ledger core; no real money or bank integrations",
+  "scripts": {
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "build": "nest build",
+    "test": "jest --runInBand",
+    "test:integration": "jest --runInBand --testRegex='integration/.*\\.integration\\.spec\\.ts$'",
+    "test:watch": "jest --watch",
+    "lint": "eslint \"{src,test}/**/*.ts\"",
+    "start:prod": "node dist/src/main.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.2.8",
+    "@nestjs/core": "^11.2.8",
+    "@nestjs/platform-express": "^11.2.8",
+    "dotenv": "^18.0.9",
+    "helmet": "^8.3.0",
+    "pg": "^8.13.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.24",
+    "@nestjs/schematics": "^11.1.0",
+    "@nestjs/testing": "^11.2.8",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "multer": "^2.5.0",
+    "webpack": "^5.112.2"
+  }
+}
