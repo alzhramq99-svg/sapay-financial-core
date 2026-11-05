@@ -1,0 +1,22 @@
+services:
+  postgres-integration:
+    image: postgres:16-alpine
+    container_name: sapay-postgres-integration
+    environment:
+      POSTGRES_DB: sapay_integration_test
+      POSTGRES_USER: sapay_test
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:?TEST_POSTGRES_PASSWORD is required}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - sapay_integration_pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sapay_test -d sapay_integration_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  sapay_integration_pgdata:
+    name: sapay_integration_pgdata

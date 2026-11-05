@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#102a43">
+  <meta name="description" content="SApay — نموذج محفظة رقمية تجريبي للسودان">
+  <title>SApay | محفظتك الرقمية</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="SApay الصفحة الرئيسية"><span class="brand-mark">SA</span><span>SA<span class="brand-green">pay</span></span></a>
+    <div class="top-actions"><span class="demo-pill"><i></i> وضع تجريبي</span><button id="logoutBtn" class="text-btn" hidden>تسجيل الخروج</button></div>
+  </header>
+
+  <main class="shell">
+    <section id="authView" class="auth-layout">
+      <div class="intro">
+        <div class="eyebrow">محفظتك، أقرب إليك</div>
+        <h1>أموالك التجريبية<br><span>في مكان واحد.</span></h1>
+        <p>جرّب تجربة محفظة SApay: أنشئ حسابًا، افتح محفظة، وتدرّب على التحويل بين المحافظ بأمان — دون أموال حقيقية.</p>
+        <div class="feature-line"><span>✓</span> حساب شخصي ومحافظ مرتبطة بك</div>
+        <div class="feature-line"><span>✓</span> سجل عمليات محفوظ في قاعدة البيانات</div>
+        <div class="feature-line"><span>✓</span> تجربة مصممة للهاتف أولًا</div>
+      </div>
+      <section class="panel auth-panel">
+        <div class="tabs" role="tablist"><button class="tab active" id="loginTab" type="button">تسجيل الدخول</button><button class="tab" id="registerTab" type="button">حساب جديد</button></div>
+        <form id="authForm">
+          <h2 id="authTitle">مرحبًا بعودتك</h2>
+          <p id="authHint" class="muted">سجّل الدخول للوصول إلى محفظتك التجريبية.</p>
+          <label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com">
+          <label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required minlength="12" maxlength="128" placeholder="12 حرفًا على الأقل">
+          <button class="primary full" id="authSubmit" type="submit">دخول آمن</button>
+          <p id="authMessage" class="form-message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </section>
+
+    <section id="appView" hidden>
+      <div class="welcome-row"><div><div class="eyebrow">لوحة المحفظة</div><h1>أهلًا بك في SApay</h1><p id="userEmail" class="muted"></p></div><span class="secure-label">● حساب تجريبي</span></div>
+      <div class="notice"><strong>تنبيه:</strong> هذه بيئة اختبار فقط. الأرصدة والتحويلات افتراضية، ولا توجد تحويلات بنكية أو أموال حقيقية.</div>
+      <section class="balance-card">
+        <div class="balance-top"><span>إجمالي الأرصدة التجريبية</span><span class="balance-icon">◈</span></div>
+        <div id="totalBalance" class="total-balance">—</div>
+        <div class="balance-foot">يتم جلب الأرصدة مباشرة من قاعدة البيانات</div>
+      </section>
+      <div class="section-heading"><div><div class="eyebrow">إدارة أموالك</div><h2>محافظك</h2></div><button id="createWalletBtn" class="primary">＋ إنشاء محفظة</button></div>
+      <div id="wallets" class="wallet-grid"><div class="panel loading">جارٍ تحميل المحافظ…</div></div>
+
+      <div class="section-heading history-heading"><div><div class="eyebrow">آخر النشاطات</div><h2>سجل العمليات</h2></div><button id="refreshBtn" class="subtle-btn">تحديث ↻</button></div>
+      <section id="history" class="panel history-list"><p class="muted">جارٍ تحميل السجل…</p></section>
+      <p class="footer-note">SApay Demo · لا تمثل هذه النسخة ترخيصًا ماليًا أو خدمة دفع فعلية.</p>
+    </section>
+  </main>
+
+  <dialog id="walletDialog" class="dialog">
+    <form method="dialog" class="dialog-head"><h2>إنشاء محفظة جديدة</h2><button class="close-btn" aria-label="إغلاق">×</button></form>
+    <form id="walletForm"><label for="currency">العملة</label><select id="currency"><option value="SDG">الجنيه السوداني (SDG)</option><option value="USD">الدولار الأمريكي (USD)</option></select><p class="muted small">إنشاء محفظة تجريبية مرتبطة بحسابك.</p><button class="primary full" type="submit">إنشاء المحفظة</button><p id="walletMessage" class="form-message"></p></form>
+  </dialog>
+
+  <dialog id="actionDialog" class="dialog">
+    <form method="dialog" class="dialog-head"><h2 id="actionTitle">عملية تجريبية</h2><button class="close-btn" aria-label="إغلاق">×</button></form>
+    <form id="actionForm">
+      <input id="actionType" type="hidden">
+      <label for="sourceWallet">المحفظة المصدر</label><select id="sourceWallet" required></select>
+      <div id="destinationWrap"><label for="destinationWallet">معرّف محفظة المستلم</label><input id="destinationWallet" autocomplete="off" placeholder="الصق معرّف محفظة المستلم"></div>
+      <div id="creditWrap" hidden><label for="creditReference">مرجع الشحن التجريبي</label><input id="creditReference" maxlength="100" placeholder="demo-credit-001"></div>
+      <label for="actionAmount">المبلغ (وحدات صحيحة تجريبية)</label><input id="actionAmount" type="number" inputmode="numeric" min="1" step="1" required placeholder="مثال: 500">
+      <p class="muted small" id="actionHint">لا تستخدم بيانات أو أموالًا حقيقية.</p>
+      <button class="primary full" id="actionSubmit" type="submit">تأكيد العملية التجريبية</button><p id="actionMessage" class="form-message" role="status"></p>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

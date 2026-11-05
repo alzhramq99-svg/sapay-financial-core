@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+node_modules/
+dist/
+coverage/
+.DS_Store
+__MACOSX/
+
+# Local backups and editor artifacts
+**/backups/
+**/*.bak
+**/*.swp
+*npm test*

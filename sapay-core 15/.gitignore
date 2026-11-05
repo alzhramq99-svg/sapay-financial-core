@@ -1,0 +1,20 @@
+node_modules/
+dist/
+coverage/
+.env
+*.log
+
+# macOS metadata
+.DS_Store
+._*
+__MACOSX/
+
+# macOS metadata
+.DS_Store
+._*
+__MACOSX/
+backups/
+
+# Local backups and editor artifacts
+**/*.bak
+**/*.swp
