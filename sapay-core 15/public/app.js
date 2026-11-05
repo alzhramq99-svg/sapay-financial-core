@@ -114,7 +114,7 @@ $('actionForm').addEventListener('submit', async (event) => {
       const reference = $('creditReference').value.trim() || ('demo-' + crypto.randomUUID());
       await api('/demo/wallets/' + encodeURIComponent(walletId) + '/credit', { method:'POST', body:JSON.stringify({ amountMinor:amount, reference }) });
     } else {
-      const destination = $('destinationWallet').value.trim().replace(/^ID\\s*:\\s*/i, '').trim();
+      const destination = $('destinationWallet').value.trim().replace(/^ID\s*:\s*/i, '').trim();
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       if (!destination) throw new Error('أدخل معرّف محفظة المستلم.');
       if (!uuidPattern.test(destination)) throw new Error('معرّف المحفظة غير صحيح. الصق المعرّف كاملًا أو السطر الذي يبدأ بـ ID:.');
