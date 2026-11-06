@@ -125,11 +125,20 @@ export class PostgresLedgerService {
     const key = typeof input.idempotencyKey === 'string' ? input.idempotencyKey.trim() : '';
     if (!key) throw new BadRequestException('Idempotency-Key header is required');
     if (key.length > 128) throw new BadRequestException('Idempotency-Key must be at most 128 characters');
+    const normalizeWalletId = (value: unknown, field: string): string => {
+      const candidate = typeof value === 'string' ? value.trim().replace(/^ID:\s*/i, '') : '';
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)) {
+        throw new BadRequestException(`${field} must be a valid wallet UUID (copy the ID value only).`);
+      }
+      return candidate.toLowerCase();
+    };
+    const fromWalletId = normalizeWalletId(input.fromWalletId, 'fromWalletId');
+    const toWalletId = normalizeWalletId(input.toWalletId, 'toWalletId');
     const amount = this.parseAmount(input.amountMinor);
     const currency = typeof input.currency === 'string' ? input.currency.trim().toUpperCase() : '';
     if (!/^[A-Z]{3}$/.test(currency)) throw new BadRequestException('currency must be a 3-letter code');
     const fingerprint = createHash('sha256').update([
-      input.userId, input.fromWalletId, input.toWalletId, amount, currency,
+      input.userId, fromWalletId, toWalletId, amount, currency,
     ].join('|')).digest('hex');
 
     return this.db.withTransaction(async (client) => {
@@ -146,11 +155,11 @@ export class PostgresLedgerService {
         return { ...prior.rows[0].response_body, idempotentReplay: true };
       }
 
-      if (input.fromWalletId === input.toWalletId) {
+      if (fromWalletId === toWalletId) {
         throw new BadRequestException('Source and destination wallets must differ');
       }
       // Stable lock order reduces deadlock risk.
-      const ids = [input.fromWalletId, input.toWalletId].sort();
+      const ids = [fromWalletId, toWalletId].sort();
       const walletRows = await client.query(
         `SELECT w.id, w.user_id, w.currency, w.status, a.id AS account_id
          FROM wallets w
@@ -161,8 +170,8 @@ export class PostgresLedgerService {
       );
       if (walletRows.rowCount !== 2) throw new NotFoundException('Source or destination wallet not found');
       const byId = new Map(walletRows.rows.map((w) => [w.id, w]));
-      const from = byId.get(input.fromWalletId)!;
-      const to = byId.get(input.toWalletId)!;
+      const from = byId.get(fromWalletId)!;
+      const to = byId.get(toWalletId)!;
       if (from.user_id !== input.userId) throw new NotFoundException('Source wallet not found');
       if (from.status !== 'ACTIVE' || to.status !== 'ACTIVE') {
         throw new UnprocessableEntityException('Both wallets must be active');

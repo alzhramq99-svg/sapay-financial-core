@@ -114,8 +114,11 @@ $('actionForm').addEventListener('submit', async (event) => {
       const reference = $('creditReference').value.trim() || ('demo-' + crypto.randomUUID());
       await api('/demo/wallets/' + encodeURIComponent(walletId) + '/credit', { method:'POST', body:JSON.stringify({ amountMinor:amount, reference }) });
     } else {
-      const destination = $('destinationWallet').value.trim();
+      const destination = $('destinationWallet').value.trim().replace(/^ID:\s*/i, '');
       if (!destination) throw new Error('أدخل معرّف محفظة المستلم.');
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(destination)) {
+        throw new Error('المعرّف غير صحيح. انسخ UUID بعد ID: فقط، أو الصقه كاملًا وسيتم تنظيفه تلقائيًا.');
+      }
       const source = state.wallets.find(w => w.id === walletId);
       await api('/transfers', { method:'POST', headers:{'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({ fromWalletId:walletId, toWalletId:destination, amountMinor:amount, currency:source.currency }) });
     }
