@@ -18,7 +18,7 @@ export class PostgresLedgerService {
       : '';
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidPattern.test(normalized)) {
-      throw new BadRequestException(`${fieldName} must be a valid wallet ID`);
+      throw new BadRequestException(`${fieldName} must be a valid wallet UUID`);
     }
     return normalized;
   }
