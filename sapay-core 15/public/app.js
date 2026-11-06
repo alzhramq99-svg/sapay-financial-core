@@ -101,7 +101,7 @@ function openAction(type, walletId) {
   $('actionForm').reset(); message('actionMessage',''); $('actionType').value = type;
   $('actionTitle').textContent = type === 'credit' ? 'شحن رصيد تجريبي' : 'تحويل تجريبي بين المحافظ';
   $('destinationWrap').hidden = type === 'credit'; $('creditWrap').hidden = type !== 'credit';
-  $('actionHint').textContent = type === 'credit' ? 'هذا الشحن افتراضي لأغراض الاختبار فقط، ولا يمثل إيداعًا ماليًا.' : 'أدخل معرّف محفظة المستلم. لا يمكن التحويل إلا إلى محفظة نشطة بنفس العملة.';
+  $('actionHint').textContent = type === 'credit' ? 'هذا الشحن افتراضي لأغراض الاختبار فقط، ولا يمثل إيداعًا ماليًا.' : 'الصق معرّف محفظة المستلم كما يظهر في البطاقة، ويمكنك لصق السطر كاملًا بما فيه ID:. لا يمكن التحويل إلا إلى محفظة نشطة بنفس العملة.';
   $('sourceWallet').innerHTML = state.wallets.map(w => `<option value="${escapeHtml(w.id)}" ${w.id === walletId ? 'selected' : ''}>${escapeHtml(w.currency)} · ${money(w.balanceMinor)}</option>`).join('');
   $('actionDialog').showModal();
 }
@@ -114,11 +114,10 @@ $('actionForm').addEventListener('submit', async (event) => {
       const reference = $('creditReference').value.trim() || ('demo-' + crypto.randomUUID());
       await api('/demo/wallets/' + encodeURIComponent(walletId) + '/credit', { method:'POST', body:JSON.stringify({ amountMinor:amount, reference }) });
     } else {
-      const destination = $('destinationWallet').value.trim().replace(/^ID:\s*/i, '');
+      const destination = $('destinationWallet').value.trim().replace(/^ID\s*:\s*/i, '').trim();
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       if (!destination) throw new Error('أدخل معرّف محفظة المستلم.');
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(destination)) {
-        throw new Error('المعرّف غير صحيح. انسخ UUID بعد ID: فقط، أو الصقه كاملًا وسيتم تنظيفه تلقائيًا.');
-      }
+      if (!uuidPattern.test(destination)) throw new Error('معرّف المحفظة غير صحيح. الصق المعرّف كاملًا أو السطر الذي يبدأ بـ ID:.');
       const source = state.wallets.find(w => w.id === walletId);
       await api('/transfers', { method:'POST', headers:{'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({ fromWalletId:walletId, toWalletId:destination, amountMinor:amount, currency:source.currency }) });
     }

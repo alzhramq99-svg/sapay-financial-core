@@ -12,6 +12,17 @@ import { DatabaseService } from './database.service';
 export class PostgresLedgerService {
   constructor(private readonly db: DatabaseService) {}
 
+  private normalizeWalletId(value: unknown, fieldName: string): string {
+    const normalized = typeof value === 'string'
+      ? value.trim().replace(/^ID\s*:\s*/i, '').trim()
+      : '';
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidPattern.test(normalized)) {
+      throw new BadRequestException(`${fieldName} must be a valid wallet ID`);
+    }
+    return normalized;
+  }
+
   async createWallet(userId: string, currency: string) {
     const code = typeof currency === 'string' ? currency.trim().toUpperCase() : '';
     if (!/^[A-Z]{3}$/.test(code)) throw new BadRequestException('currency must be a 3-letter code, e.g. SDG');
@@ -37,6 +48,7 @@ export class PostgresLedgerService {
   }
 
   async getWallet(walletId: string, userId: string) {
+    walletId = this.normalizeWalletId(walletId, 'walletId');
     const result = await this.db.query(
       `SELECT w.id, u.external_ref AS "ownerId", w.currency, w.status,
               w.created_at AS "createdAt",
@@ -72,6 +84,7 @@ export class PostgresLedgerService {
   }
 
   async demoCredit(walletId: string, userId: string, amountInput: string, referenceInput: string) {
+    walletId = this.normalizeWalletId(walletId, 'walletId');
     const amount = this.parseAmount(amountInput);
     const reference = typeof referenceInput === 'string' ? referenceInput.trim() : '';
     if (!reference) throw new BadRequestException('reference is required');
@@ -122,18 +135,11 @@ export class PostgresLedgerService {
     fromWalletId: string; toWalletId: string; amountMinor: string;
     currency: string; idempotencyKey: string; userId: string;
   }) {
+    const fromWalletId = this.normalizeWalletId(input.fromWalletId, 'fromWalletId');
+    const toWalletId = this.normalizeWalletId(input.toWalletId, 'toWalletId');
     const key = typeof input.idempotencyKey === 'string' ? input.idempotencyKey.trim() : '';
     if (!key) throw new BadRequestException('Idempotency-Key header is required');
     if (key.length > 128) throw new BadRequestException('Idempotency-Key must be at most 128 characters');
-    const normalizeWalletId = (value: unknown, field: string): string => {
-      const candidate = typeof value === 'string' ? value.trim().replace(/^ID:\s*/i, '') : '';
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)) {
-        throw new BadRequestException(`${field} must be a valid wallet UUID (copy the ID value only).`);
-      }
-      return candidate.toLowerCase();
-    };
-    const fromWalletId = normalizeWalletId(input.fromWalletId, 'fromWalletId');
-    const toWalletId = normalizeWalletId(input.toWalletId, 'toWalletId');
     const amount = this.parseAmount(input.amountMinor);
     const currency = typeof input.currency === 'string' ? input.currency.trim().toUpperCase() : '';
     if (!/^[A-Z]{3}$/.test(currency)) throw new BadRequestException('currency must be a 3-letter code');
