@@ -85,5 +85,13 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
+      - name: Initialize isolated integration database schema
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/init/001_schema.sql
+
       - name: Run isolated PostgreSQL integration tests
         run: npm run test:integration
