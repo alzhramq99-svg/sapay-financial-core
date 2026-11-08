@@ -1,4 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit, ServiceUnavailableException } from '@nestjs/common';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 
 const STARTUP_CONNECTION_ATTEMPTS = 5;
@@ -139,6 +141,12 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     for (let attempt = 1; attempt <= STARTUP_CONNECTION_ATTEMPTS; attempt++) {
       try {
         await this.pool.query('SELECT 1');
+        if (process.env.DB_AUTO_MIGRATE === 'true') {
+          const schemaPath = join(process.cwd(), 'database', 'init', '001_schema.sql');
+          const schemaSql = readFileSync(schemaPath, 'utf8');
+          await this.pool.query(schemaSql);
+          this.logger.log('Demo database schema migration applied.');
+        }
         this.logger.log('PostgreSQL connection established (demo environment).');
         return;
       } catch (error) {

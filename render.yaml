@@ -16,6 +16,8 @@ services:
         value: "false"
       - key: AUTH_TOKEN_SECRET
         generateValue: true
+      - key: DB_AUTO_MIGRATE
+        value: "true"
       - key: PGHOST
         fromDatabase:
           name: sapay-staging-db

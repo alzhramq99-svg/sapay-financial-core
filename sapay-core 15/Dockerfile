@@ -12,6 +12,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --chown=node:node public ./public
+COPY --chown=node:node database ./database
 USER node
 EXPOSE 3000
 CMD ["node", "dist/src/main.js"]
