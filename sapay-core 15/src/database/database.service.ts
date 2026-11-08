@@ -20,11 +20,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pool?: Pool;
 
   async onModuleInit(): Promise<void> {
-    const rawConnectionString = process.env.DATABASE_URL;
-    const connectionString = rawConnectionString?.trim();
-    if (rawConnectionString !== undefined && !connectionString) {
-      throw new Error('DATABASE_URL must not be empty.');
-    }
+    const connectionString = process.env.DATABASE_URL?.trim() || undefined;
     const configuredPgSettings = [
       'PGHOST',
       'PGPORT',
