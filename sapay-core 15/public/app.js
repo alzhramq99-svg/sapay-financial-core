@@ -3,8 +3,20 @@ const $ = (id) => document.getElementById(id);
 const state = { token: sessionStorage.getItem('sapay_access_token') || '', user: null, wallets: [], authMode: 'login' };
 const money = (minor) => { try { return BigInt(minor || '0').toLocaleString('en-US'); } catch { return '0'; } };
 const headers = () => ({ 'Content-Type': 'application/json', ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}) });
+const nativeRuntime = window.location.protocol === 'capacitor:';
+const configuredApiBase = String(window.SAPAY_CONFIG?.apiBaseUrl || '').trim().replace(/\/+$/, '');
+function apiOrigin() {
+  const base = configuredApiBase || (nativeRuntime ? '' : window.location.origin);
+  if (!base) throw new Error('لم يتم إعداد عنوان خادم SApay لهذا الإصدار التجريبي.');
+  let url;
+  try { url = new URL(base); } catch { throw new Error('عنوان خادم SApay غير صالح.'); }
+  if ((nativeRuntime || url.origin !== window.location.origin) && url.protocol !== 'https:') {
+    throw new Error('يجب استخدام اتصال HTTPS آمن مع خادم SApay.');
+  }
+  return url.origin;
+}
 async function api(path, options = {}) {
-  const response = await fetch('/api' + path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
+  const response = await fetch(apiOrigin() + '/api' + path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 401 && state.token) logout(false);
