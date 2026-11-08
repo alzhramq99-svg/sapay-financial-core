@@ -14,10 +14,26 @@ services:
         value: 0.0.0.0
       - key: DATABASE_SSL
         value: "true"
-      - key: DATABASE_URL
+      - key: PGHOST
         fromDatabase:
           name: sapay-staging-db
-          property: connectionString
+          property: host
+      - key: PGPORT
+        fromDatabase:
+          name: sapay-staging-db
+          property: port
+      - key: PGDATABASE
+        fromDatabase:
+          name: sapay-staging-db
+          property: database
+      - key: PGUSER
+        fromDatabase:
+          name: sapay-staging-db
+          property: user
+      - key: PGPASSWORD
+        fromDatabase:
+          name: sapay-staging-db
+          property: password
 databases:
   - name: sapay-staging-db
     plan: free
