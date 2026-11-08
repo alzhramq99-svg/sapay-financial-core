@@ -2,12 +2,12 @@ name: SApay CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, deploy/render-staging]
     paths:
       - 'sapay-core 15/**'
       - '.github/workflows/sapay-ci.yml'
   push:
-    branches: [main, 'recovery/**']
+    branches: [main, deploy/render-staging, 'recovery/**', 'fix/**']
     paths:
       - 'sapay-core 15/**'
       - '.github/workflows/sapay-ci.yml'
@@ -46,3 +46,44 @@ jobs:
 
       - name: Build production application
         run: npm run build
+
+  postgres-integration:
+    name: PostgreSQL integration and security tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sapay_integration_test
+          POSTGRES_USER: sapay_test
+          POSTGRES_PASSWORD: sapay-ci-only-integration-password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U sapay_test -d sapay_integration_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: 'sapay-core 15'
+    env:
+      TEST_POSTGRES_PASSWORD: sapay-ci-only-integration-password
+      DATABASE_URL: postgresql://sapay_test:sapay-ci-only-integration-password@127.0.0.1:5433/sapay_integration_test
+      AUTH_TOKEN_SECRET: ci-only-auth-token-secret-at-least-32-characters
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: 'sapay-core 15/package-lock.json'
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run isolated PostgreSQL integration tests
+        run: npm run test:integration
