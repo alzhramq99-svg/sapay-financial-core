@@ -13,7 +13,9 @@ services:
       - key: APP_HOST
         value: 0.0.0.0
       - key: DATABASE_SSL
-        value: "true"
+        value: "false"
+      - key: AUTH_TOKEN_SECRET
+        generateValue: true
       - key: PGHOST
         fromDatabase:
           name: sapay-staging-db
