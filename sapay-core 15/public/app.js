@@ -33,7 +33,9 @@ function setAuthMode(mode) {
   $('authTitle').textContent = mode === 'login' ? 'مرحبًا بعودتك' : 'أنشئ حساب SApay';
   $('authHint').textContent = mode === 'login' ? 'سجّل الدخول للوصول إلى محفظتك التجريبية.' : 'استخدم بريدًا تجريبيًا وكلمة مرور من 12 حرفًا على الأقل.';
   $('authSubmit').textContent = mode === 'login' ? 'دخول آمن' : 'إنشاء الحساب';
-  $('password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';\n  $('inviteCodeWrap').hidden = mode !== 'register';\n  $('inviteCode').required = mode === 'register';
+  $('password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  $('inviteCodeWrap').hidden = mode !== 'register';
+  $('inviteCode').required = mode === 'register';\n  $('inviteCodeWrap').hidden = mode !== 'register';\n  $('inviteCode').required = mode === 'register';
   message('authMessage', '');
 }
 $('loginTab').addEventListener('click', () => setAuthMode('login'));
