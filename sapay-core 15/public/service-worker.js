@@ -10,7 +10,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
-      keys.filter((key) => key.startsWith('sapay-') && key !== CACHE_NAME).map((key) => caches.delete(key))
+      keys.filter((key) => key === 'sapay-beta-shell-v1').map((key) => caches.delete(key))
     ))
   );
   self.clients.claim();
