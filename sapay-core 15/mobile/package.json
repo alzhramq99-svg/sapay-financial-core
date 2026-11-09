@@ -1,0 +1,18 @@
+{
+  "name": "sapay-ios-shell",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SApay iOS native shell powered by Capacitor",
+  "scripts": {
+    "copy:web": "node ./scripts/copy-web-assets.mjs",
+    "cap:add:ios": "cap add ios",
+    "cap:sync": "npm run copy:web && cap sync ios",
+    "build:ios:simulator": "npm run cap:sync && xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Release -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}
