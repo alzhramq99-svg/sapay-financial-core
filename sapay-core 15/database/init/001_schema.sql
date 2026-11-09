@@ -121,7 +121,7 @@ FOR EACH ROW EXECUTE FUNCTION prevent_posting_mutation();
 -- Private beta invitations: only SHA-256 hashes are stored; raw codes are never persisted.
 CREATE TABLE IF NOT EXISTS beta_invitations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  code_hash CHAR(64) NOT NULL UNIQUE CHECK (code_hash ~ '^[0-9a-f]{64}
+  code_hash CHAR(64) NOT NULL UNIQUE CHECK (length(code_hash) = 64 AND code_hash !~ '[^0-9a-f]'),
   label VARCHAR(80) NOT NULL,
   expires_at TIMESTAMPTZ NOT NULL,
   used_at TIMESTAMPTZ,
