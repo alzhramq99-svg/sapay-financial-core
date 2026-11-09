@@ -117,4 +117,29 @@ CREATE TRIGGER ledger_postings_no_update
 BEFORE UPDATE OR DELETE ON ledger_postings
 FOR EACH ROW EXECUTE FUNCTION prevent_posting_mutation();
 
+
+-- Private beta invitations: only SHA-256 hashes are stored; raw codes are never persisted.
+CREATE TABLE IF NOT EXISTS beta_invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code_hash CHAR(64) NOT NULL UNIQUE CHECK (length(code_hash) = 64 AND code_hash !~ '[^0-9a-f]'),
+  label VARCHAR(80) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  used_by UUID REFERENCES app_users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK ((used_at IS NULL AND used_by IS NULL) OR (used_at IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS idx_beta_invitations_expiry ON beta_invitations(expires_at) WHERE used_at IS NULL;
+
+COMMIT;
+),
+  label VARCHAR(80) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  used_by UUID REFERENCES app_users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK ((used_at IS NULL AND used_by IS NULL) OR (used_at IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS idx_beta_invitations_expiry ON beta_invitations(expires_at) WHERE used_at IS NULL;
+
 COMMIT;
