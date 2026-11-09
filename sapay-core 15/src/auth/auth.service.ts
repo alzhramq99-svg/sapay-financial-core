@@ -56,7 +56,7 @@ export class AuthService {
     const email = typeof input?.email === 'string' ? input.email.trim().toLowerCase() : '';
     const password = input?.password;
     const inviteCode = typeof input?.inviteCode === 'string' ? input.inviteCode.trim() : '';
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) throw new BadRequestException('A valid email is required');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new BadRequestException('A valid email is required');
     if (typeof password !== 'string' || password.length < 12 || password.length > 128) throw new BadRequestException('Password must be 12–128 characters');
     if (!/^[A-Za-z0-9_-]{32,128}$/.test(inviteCode)) throw new BadRequestException('A valid invitation code is required');
     const passwordHash = await this.hashPassword(password);
