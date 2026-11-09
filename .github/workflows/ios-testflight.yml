@@ -39,6 +39,7 @@ jobs:
         env:
           IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          RUNNER_TEMP_KEYCHAIN_PASSWORD: ${{ runner.temp }}-sapay-keychain
         run: |
           test -n "$IOS_DISTRIBUTION_CERTIFICATE_BASE64"
           test -n "$IOS_CERTIFICATE_PASSWORD"
@@ -51,8 +52,6 @@ jobs:
           security import "$CERT_PATH" -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
           security list-keychain -d user -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple: -s -k "$RUNNER_TEMP_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-        env:
-          RUNNER_TEMP_KEYCHAIN_PASSWORD: ${{ runner.temp }}-sapay-keychain
 
       - name: Install App Store provisioning profile
         env:
