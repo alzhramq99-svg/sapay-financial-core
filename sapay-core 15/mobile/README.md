@@ -17,7 +17,7 @@ npx cap add ios
 npx cap sync ios
 ```
 
-The web bundle is copied from `../public`; `runtime-config.js` already points to the HTTPS demo API. API calls and authentication remain served by the existing backend. No secrets or real-money integrations are included in this app shell.
+The web bundle is copied from `../public`; `runtime-config.js` already points to the HTTPS demo API. The generated CocoaPods workspace (`ios/App/App.xcworkspace`) must be used for Xcode builds so the Capacitor framework is linked. API calls and authentication remain served by the existing backend. No secrets or real-money integrations are included in this app shell.
 
 ## Signing and TestFlight
 
