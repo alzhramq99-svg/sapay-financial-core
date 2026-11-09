@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { AuthService } from '../src/auth/auth.service';
 
 describe('AuthService private beta registration', () => {
@@ -29,7 +29,7 @@ describe('AuthService private beta registration', () => {
     const result = await service.register({email:'a@example.com',password:'long-password-123',inviteCode:invite});
     expect(db.withTransaction).toHaveBeenCalledTimes(1);
     expect(client.query.mock.calls[0][0]).toContain('used_at IS NULL AND expires_at > now()');
-    expect(client.query.mock.calls[0][1][0]).toBe(createHmac('sha256','sapay-beta-invitation-v1').update(invite).digest('hex'));
+    expect(client.query.mock.calls[0][1][0]).toBe(createHash('sha256').update(invite).digest('hex'));
     expect(client.query.mock.calls[1][0]).toContain('INSERT INTO app_users');
     expect(client.query.mock.calls[2][0]).toContain('used_by=$2');
     expect(result.user.email).toBe('a@example.com');
