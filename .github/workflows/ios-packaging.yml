@@ -6,6 +6,7 @@ on:
     paths:
       - 'sapay-core 15/mobile/**'
       - 'sapay-core 15/public/**'
+      - '.github/workflows/ios-packaging.yml'
 
 jobs:
   ios-simulator:
