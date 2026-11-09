@@ -2,13 +2,6 @@ name: SApay iOS TestFlight build
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feature/ios-capacitor-app
-    paths:
-      - 'sapay-core 15/mobile/**'
-      - 'sapay-core 15/public/**'
-      - '.github/workflows/ios-testflight.yml'
 
 permissions:
   contents: read
