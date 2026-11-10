@@ -54,7 +54,14 @@ jobs:
           PROFILE_PATH="$RUNNER_TEMP/sapay.mobileprovision"
           echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' /dev/stdin <<< "$(security cms -D -i "$PROFILE_PATH")")
+          DECODED_PROFILE="$RUNNER_TEMP/sapay-profile.plist"
+          security cms -D -i "$PROFILE_PATH" > "$DECODED_PROFILE"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$DECODED_PROFILE")
+          PROFILE_APP_ID=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$DECODED_PROFILE")
+          case "$PROFILE_APP_ID" in
+            *".com.saadaligroup.sapay") ;;
+            *) echo "Provisioning profile does not match com.saadaligroup.sapay"; exit 1 ;;
+          esac
           cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
           echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
 
