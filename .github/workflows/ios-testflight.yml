@@ -21,6 +21,20 @@ jobs:
         with:
           node-version: 20
 
+      - name: Validate required signing and App Store Connect secrets
+        env:
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
+        run: |
+          for name in IOS_DISTRIBUTION_CERTIFICATE_BASE64 IOS_CERTIFICATE_PASSWORD IOS_PROVISIONING_PROFILE_BASE64 IOS_TEAM_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_API_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then echo "Missing required GitHub Actions secret: $name"; exit 1; fi
+          done
+
       - name: Install Capacitor dependencies and generate iOS project
         run: |
           npm install
@@ -49,6 +63,7 @@ jobs:
       - name: Install App Store provisioning profile
         env:
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
         run: |
           test -n "$IOS_PROVISIONING_PROFILE_BASE64"
           PROFILE_PATH="$RUNNER_TEMP/sapay.mobileprovision"
@@ -58,10 +73,14 @@ jobs:
           security cms -D -i "$PROFILE_PATH" > "$DECODED_PROFILE"
           PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$DECODED_PROFILE")
           PROFILE_APP_ID=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$DECODED_PROFILE")
-          case "$PROFILE_APP_ID" in
-            *".com.saadaligroup.sapay") ;;
-            *) echo "Provisioning profile does not match com.saadaligroup.sapay"; exit 1 ;;
-          esac
+          PROFILE_TEAM_ID=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$DECODED_PROFILE")
+          EXPECTED_APP_ID="$IOS_TEAM_ID.com.saadaligroup.sapay"
+          if [ "$PROFILE_APP_ID" != "$EXPECTED_APP_ID" ]; then
+            echo "Provisioning profile application-identifier mismatch. Expected $EXPECTED_APP_ID, got $PROFILE_APP_ID"; exit 1
+          fi
+          if [ "$PROFILE_TEAM_ID" != "$IOS_TEAM_ID" ]; then
+            echo "Provisioning profile TeamIdentifier mismatch. Expected $IOS_TEAM_ID, got $PROFILE_TEAM_ID"; exit 1
+          fi
           cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
           echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
 
@@ -78,6 +97,8 @@ jobs:
             -archivePath "$RUNNER_TEMP/SApay.xcarchive" \
             DEVELOPMENT_TEAM="$IOS_TEAM_ID" \
             PRODUCT_BUNDLE_IDENTIFIER=com.saadaligroup.sapay \
+            MARKETING_VERSION=0.1.0 \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             CODE_SIGN_STYLE=Manual \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID" \
             CODE_SIGN_IDENTITY="Apple Distribution" \
