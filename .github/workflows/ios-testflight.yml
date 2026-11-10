@@ -99,18 +99,25 @@ jobs:
             -exportPath "$RUNNER_TEMP/export" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
 
+      - name: Resolve exported IPA path
+        shell: bash
+        run: |
+          IPA_PATH="$(find "$RUNNER_TEMP/export" -maxdepth 1 -type f -name '*.ipa' -print -quit)"
+          test -n "$IPA_PATH"
+          echo "IPA_PATH=$IPA_PATH" >> "$GITHUB_ENV"
+
       - name: Save IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: sapay-iphone-ipa
-          path: ${{ runner.temp }}/export/*.ipa
+          path: ${{ env.IPA_PATH }}
           if-no-files-found: error
           retention-days: 14
 
       - name: Upload build to TestFlight
         uses: apple-actions/upload-testflight-build@v1
         with:
-          app-path: ${{ runner.temp }}/export/*.ipa
+          app-path: ${{ env.IPA_PATH }}
           issuer-id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           api-key-id: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           api-private-key: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
