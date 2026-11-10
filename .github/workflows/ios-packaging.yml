@@ -1,0 +1,46 @@
+name: iOS packaging validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'sapay-core 15/mobile/**'
+      - 'sapay-core 15/public/**'
+      - '.github/workflows/ios-packaging.yml'
+
+jobs:
+  ios-simulator:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: 'sapay-core 15/mobile'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Capacitor dependencies
+        run: npm install
+      - name: Generate iOS project
+        run: |
+          npm run copy:web
+          npx cap add ios
+          npx cap sync ios
+      - name: Build iOS Simulator app
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Upload simulator build
+        uses: actions/upload-artifact@v4
+        with:
+          name: sapay-ios-simulator
+          path: 'sapay-core 15/mobile/build/DerivedData/Build/Products/Release-iphonesimulator/App.app'
+          if-no-files-found: error
+          retention-days: 7
