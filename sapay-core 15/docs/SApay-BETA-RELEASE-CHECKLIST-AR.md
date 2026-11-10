@@ -103,4 +103,42 @@
 - [ ] رفع IPA إلى App Store Connect والتحقق من ظهوره في TestFlight.
 - [ ] تثبيت نسخة TestFlight على iPhone وإجراء قبول نهائي قبل دعوة المختبرين.
 
-**مهم:** عضوية Apple قيد المراجعة حاليًا. تأكيد استلام Apple للمستندات أو طلب الدعم لا يساوي تفعيل العضوية. لا تُكرر عملية الدفع.
+**مهم:** عضوية Apple قيد المراجعة حاليًا. تأكيد استلام Apple للمستندات أو طلب الدعم لا يساوي تفعيل العضوية. لا تُكرر عملية الدفع.### حالة تطبيق iOS وTestFlight — تحديث 10 نوفمبر 2026
+
+| البند | الحالة | الدليل / القيد |
+|---|---|---|
+| غلاف iOS باستخدام Capacitor | [x] جاهز في المستودع | `sapay-core 15/mobile`، Bundle ID: `com.saadaligroup.sapay` |
+| إعداد البناء السحابي على macOS | [x] مُعدّ | `.github/workflows/ios-testflight.yml`، تشغيل يدوي من GitHub Actions |
+| بناء محاكي iOS | [x] نجح سابقًا | Artifact باسم `sapay-ios-simulator`؛ هذا للمحاكي فقط وليس IPA للآيفون |
+| التحقق من إعدادات التوقيع | [x] أضيفت فحوصات مسبقة | يتحقق Workflow من الأسرار السبعة ومن تطابق Bundle ID وTeam ID في ملف Provisioning Profile |
+| نجاح أحدث Workflow بعد آخر تعديل | [ ] غير مثبت | لا نعتبر تعديل Workflow ناجحًا حتى يظهر تشغيل أخضر على أحدث commit |
+| عضوية Apple Developer | [ ] بانتظار تأكيد Apple | تم استلام مستندات التسجيل وطلب الدعم؛ الاستلام ليس تأكيد تفعيل |
+| App ID وسجل التطبيق في App Store Connect | [ ] ينتظران تفعيل العضوية | Bundle ID المطلوب: `com.saadaligroup.sapay`، وSKU: `SAPAY-IOS-001` |
+| شهادة Apple Distribution وملف App Store Provisioning | [ ] غير مثبتين | يجب إنشاؤهما من حساب Apple النشط |
+| مفاتيح GitHub Actions السبعة | [ ] غير مثبتة | تُضاف في إعدادات GitHub Secrets فقط، ولا تُرسل في المحادثة |
+| إنشاء IPA موقع ورفعه إلى TestFlight | [ ] لم يحدث بعد | لا يوجد حتى الآن دليل IPA موقع أو رفع ناجح إلى TestFlight |
+| بيانات صفحة App Store والخصوصية | [ ] تحتاج اعتماد المالك | روابط الدعم والخصوصية، إفصاحات البيانات، لقطات الشاشة، التصنيف، ومعلومات المراجعة |
+
+## خطوات الإكمال بالترتيب
+
+1. انتظار تأكيد Apple أن عضوية Apple Developer أصبحت **Active**. لا تُكرر الدفع ولا تُلغِ طلب التسجيل الحالي أثناء المراجعة.
+2. بعد التفعيل، تسجيل App ID صريح بالمعرّف `com.saadaligroup.sapay` وإنشاء سجل التطبيق في App Store Connect بالاسم SApay وSKU `SAPAY-IOS-001`.
+3. إنشاء شهادة Apple Distribution وملف App Store provisioning profile المرتبطين بالمعرّف نفسه والفريق نفسه.
+4. إنشاء App Store Connect API key بصلاحية رفع البناء، ثم إضافة القيم السبعة إلى GitHub → Settings → Secrets and variables → Actions:
+   - `IOS_DISTRIBUTION_CERTIFICATE_BASE64`
+   - `IOS_CERTIFICATE_PASSWORD`
+   - `IOS_PROVISIONING_PROFILE_BASE64`
+   - `IOS_TEAM_ID`
+   - `APP_STORE_CONNECT_ISSUER_ID`
+   - `APP_STORE_CONNECT_API_KEY_ID`
+   - `APP_STORE_CONNECT_API_PRIVATE_KEY`
+5. تشغيل `SApay iOS TestFlight build` يدويًا من تبويب Actions، والتحقق من نجاح جميع الخطوات وظهور artifact باسم `sapay-iphone-ipa` ثم تأكيد ظهور البناء داخل TestFlight.
+6. إكمال بيانات الخصوصية والدعم ولقطات شاشة من النسخة الموقعة، ثم دعوة المختبرين بعد اعتماد المالك.
+
+## ضوابط أمان الإصدار
+
+- لا تُرسل أو تلصق ملفات `.p12` أو `.mobileprovision` أو مفتاح `.p8` أو كلمات المرور في المحادثة أو في ملفات المستودع.
+- لا نضع أي بيانات حقيقية أو أموال أو تكاملات مصرفية في نسخة الاختبار؛ تظل `DEMO_ONLY`.
+- لا نعلن أن التطبيق جاهز للآيفون قبل وجود IPA موقع ورفع مؤكد داخل TestFlight.
+- بناء المحاكي لا يساوي بناء جهاز حقيقي، ونجاح نشر الويب لا يثبت نجاح توقيع iOS.
+
