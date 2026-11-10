@@ -45,7 +45,7 @@ jobs:
 
       - name: Install Capacitor dependencies and generate iOS project
         run: |
-          npm ci
+          npm install
           npm run copy:web
           npx cap add ios
           npx cap sync ios
