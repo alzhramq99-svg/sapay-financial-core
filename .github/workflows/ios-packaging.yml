@@ -2,6 +2,13 @@ name: iOS packaging validation
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - deploy/render-staging
+    paths:
+      - 'sapay-core 15/mobile/**'
+      - 'sapay-core 15/public/**'
+      - '.github/workflows/ios-packaging.yml'
   pull_request:
     paths:
       - 'sapay-core 15/mobile/**'
