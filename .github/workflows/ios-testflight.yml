@@ -35,9 +35,17 @@ jobs:
             if [ -z "${!name}" ]; then echo "Missing required GitHub Actions secret: $name"; exit 1; fi
           done
 
+      - name: Validate App Store Connect API private key
+        env:
+          APP_STORE_CONNECT_API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
+        run: |
+          printf '%s\\n' "$APP_STORE_CONNECT_API_PRIVATE_KEY" > "$RUNNER_TEMP/AuthKey.p8"
+          openssl pkey -in "$RUNNER_TEMP/AuthKey.p8" -noout
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
+
       - name: Install Capacitor dependencies and generate iOS project
         run: |
-          npm install
+          npm ci
           npm run copy:web
           npx cap add ios
           npx cap sync ios
@@ -59,6 +67,9 @@ jobs:
           security import "$CERT_PATH" -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
           security list-keychain -d user -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple: -s -k "$RUNNER_TEMP_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q 'Apple Distribution'; then
+            echo "No usable Apple Distribution signing identity found in the imported certificate"; exit 1
+          fi
 
       - name: Install App Store provisioning profile
         env:
@@ -80,6 +91,10 @@ jobs:
           fi
           if [ "$PROFILE_TEAM_ID" != "$IOS_TEAM_ID" ]; then
             echo "Provisioning profile TeamIdentifier mismatch. Expected $IOS_TEAM_ID, got $PROFILE_TEAM_ID"; exit 1
+          fi
+          PROFILE_EXPIRY=$(/usr/libexec/PlistBuddy -c 'Print :ExpirationDate' "$DECODED_PROFILE")
+          if ! /usr/bin/python3 -c 'import datetime,sys; d=datetime.datetime.fromisoformat(sys.argv[1].replace("Z","+00:00")); sys.exit(0 if d > datetime.datetime.now(datetime.timezone.utc) else 1)' "$PROFILE_EXPIRY"; then
+            echo "Provisioning profile has expired"; exit 1
           fi
           cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
           echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
