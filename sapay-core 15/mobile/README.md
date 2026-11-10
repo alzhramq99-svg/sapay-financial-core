@@ -54,3 +54,6 @@ The workflow does not bypass Apple's enrollment or signing requirements. Until t
 - Bundle ID: `com.saadaligroup.sapay`
 - SKU: `SAPAY-IOS-001`
 - Demo API only; no real-money transfers or live bank integrations.
+## Signing preflight safeguards
+
+The cloud TestFlight workflow validates that all seven required GitHub Actions secrets are present before attempting a device build. It also parses the App Store Connect API private key, verifies the imported Apple Distribution identity is usable, and checks that the provisioning profile is unexpired and matches both the expected bundle identifier and Apple Team ID. The mobile package currently has no committed npm lockfile, so the workflow intentionally uses `npm install` rather than `npm ci`.
