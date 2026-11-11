@@ -1,70 +1,74 @@
-# SApay — Privacy Policy (draft for legal and owner review)
+# SApay — Privacy Policy (draft for owner and legal review)
 
-**Status:** Draft only. This is not yet a published policy or legal approval.  
+**Status:** Operationally informed draft; not legal approval and not ready for final App Store submission.  
 **App:** SApay demo version  
-**Effective date:** To be set by the owner before publication.
+**Revision date:** 12 November 2026
 
 ## 1. Scope and demo warning
 
-SApay in its current beta/demo form is provided only to demonstrate a digital-wallet interface. It does not accept, hold, or transfer real money and does not connect to banks, card networks, telecom payment rails, or government payment systems. Do not enter real banking, payment-card, identity-document, or other sensitive financial information.
+SApay is a demonstration wallet interface. It does not accept, hold, or transfer real money and does not connect to banks, card networks, telecom payment rails, or government payment systems. Do not enter real banking, payment-card, identity-document, or other sensitive financial information.
 
-## 2. Information that may be processed
+## 2. Information the current application is designed to store
 
-The demo service is designed to process information needed to operate test accounts and simulated wallets, which may include:
-- Account identifier and sign-in information supplied during test-account registration (for example, an email address if the registration flow requests it).
-- Demo wallet identifiers, currency labels, simulated balances, and simulated transaction/top-up records.
-- Information submitted when contacting the project team for support.
+The inspected application code and PostgreSQL schema show that the demo backend stores:
+- Account email address and a password hash. Passwords are hashed with scrypt; the plaintext password is not stored by the registration service.
+- User/account identifiers and account status.
+- Demo wallet identifiers, owner association, currency, and status.
+- Simulated ledger journal entries, debit/credit postings, simulated transfer records, and idempotency request keys/response data.
+- Support information only if a user independently sends it through a support channel.
 
-The exact fields collected by the currently deployed build, including any device, diagnostic, access-log, or hosting-provider data, must be confirmed against the deployed application and its infrastructure before this policy is published.
+The API issues signed bearer access tokens with a 15-minute lifetime. The token is returned to the client for authentication; it is not a real-money credential.
+
+The inspected code does not establish a complete inventory of infrastructure access logs, IP-address retention, device identifiers, analytics, crash reporting, or all third-party telemetry. These must be confirmed with the hosting providers and final deployed configuration before publication.
 
 ## 3. How information is used
 
-Subject to confirmation against the deployed system, demo information is used to:
+Demo information is used to:
 - Create and authenticate test accounts.
-- Display demo wallets and simulated activity.
-- Process simulated transfers between demo wallets.
-- Diagnose service errors, maintain security, and respond to support requests.
+- Associate wallets with the account owner.
+- Display demo wallets, balances, and simulated activity.
+- Record simulated credits and transfers in the demo ledger.
+- Protect the API, prevent duplicate transfer requests, diagnose service errors, and maintain the demo service.
 
-No real-money payment processing is provided by this demo.
+No real-money payment processing is provided.
 
-## 4. Sharing and service providers
+## 4. Storage, infrastructure providers, and sharing
 
-The service may rely on infrastructure providers to host the application, API, and database. The owner must identify the actual providers, their roles, applicable processing locations, and any analytics or crash-reporting SDKs before publication. Do not assume that no third party processes technical data.
+The current architecture uses PostgreSQL for account and ledger records. The web interface is deployed through Vercel and the API is hosted through Render. These infrastructure providers may process technical and operational information as needed to deliver, secure, and maintain their services, subject to their own terms and privacy documentation.
+
+Before final publication, the owner must confirm the exact provider account configuration, processing regions, subprocessors, backup behavior, access-log settings, and whether any analytics or crash-reporting tools are enabled. Do not assume that no third party processes technical data.
 
 ## 5. Retention and deletion
 
-Retention periods and the process for deleting a demo account and associated records must be confirmed by the owner and implementation review before publication. Do not promise a deletion period or deletion mechanism until it is implemented and verified.
+The inspected schema and application do not establish a complete user-facing retention schedule or verified self-service account/data deletion process. Account, wallet, ledger, and idempotency records may remain in the PostgreSQL database until an authorized operational deletion/retention process is defined and implemented. The owner must set retention periods, backup expiry behavior, and a contact-based deletion process before public distribution. No fixed deletion deadline is promised in this draft.
 
 ## 6. Security
 
-Reasonable technical and organizational safeguards should be used to protect demo account and test data. No online service can guarantee absolute security. Users should use unique test credentials and must not reuse personal passwords.
+The inspected code uses scrypt password hashing, signed short-lived access tokens, authenticated wallet routes, API rate limiting, and PostgreSQL-backed ledger transactions. These are technical safeguards, not a guarantee of absolute security. Users should use unique test credentials and must not reuse personal passwords.
 
-## 7. Children
+## 7. Children, international users, and legal operator
 
-The owner must set the intended audience and age rating in App Store Connect and confirm whether the demo is directed to children. Do not publish this section as a final statement until that decision is made.
+The owner must confirm the intended audience, age rating, legal operator name and address, countries in which the app will be distributed, and any cross-border processing before publication.
 
-## 8. International users
-
-The owner must confirm the legal entity/operator, countries in which the service is offered, and any cross-border processing before publication.
-
-## 9. Contact
+## 8. Contact
 
 **Privacy contact:** To be supplied and monitored by the owner before publication.  
 **Operator/legal entity:** Exact legal name and address to be confirmed by the owner.
 
-## 10. Changes
+## 9. Changes
 
-The owner should update this policy when the app's data practices change and publish the revision date.
+This policy must be updated when the app's data practices change. The published page should show its effective/revision date.
 
 ---
 
-## Required owner/technical confirmations before publication
+## Required owner/technical confirmations before final publication
 
-- Confirm the exact registration fields and authentication data stored.
-- Confirm whether IP addresses, device identifiers, request logs, crash logs, or analytics are collected.
-- Identify hosting, database, email, analytics, and monitoring providers and their processing locations.
-- Confirm retention periods and account/data deletion process.
-- Confirm legal operator name, address, privacy contact, and intended countries/audience.
+- Verify the exact production database fields and deployed API behavior.
+- Confirm Vercel and Render processing regions, subprocessors, log retention, backups, and account settings.
+- Confirm whether IP addresses, device identifiers, request logs, crash logs, or analytics are collected and for how long.
+- Define and implement account/data deletion and backup expiry.
+- Set a retention schedule for accounts, wallets, ledger entries, and idempotency records.
+- Confirm legal operator name, address, monitored privacy/support contact, intended audience, and distribution countries.
 - Review the final policy with appropriate legal counsel for the jurisdictions where the app will be distributed.
 
-**Do not submit this draft as the final App Store privacy policy until all confirmations above are completed and a public HTTPS URL is live.**
+**Do not submit this draft as the final App Store privacy policy until all confirmations above are completed and the owner approves the public wording.**
