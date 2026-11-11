@@ -13,8 +13,9 @@ function getDatabaseErrorCode(error: unknown): string | undefined {
 }
 
 /**
- * PostgreSQL connection pool. This is the connection layer only.
- * The existing LedgerService remains in-memory until its repository is migrated.
+ * PostgreSQL connection pool and transaction boundary for the demo API.
+ * Current wallet and transfer controllers use PostgresLedgerService, which
+ * persists simulated ledger activity through this service. No real funds move.
  */
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
