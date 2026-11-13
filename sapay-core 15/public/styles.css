@@ -3,3 +3,32 @@
 
 /* iPhone / installed PWA safe areas and touch ergonomics */
 html{min-height:100%;-webkit-text-size-adjust:100%;}body{min-height:100vh;min-height:100dvh;padding-bottom:env(safe-area-inset-bottom);} .topbar{padding-top:env(safe-area-inset-top);height:calc(72px + env(safe-area-inset-top));} .shell{padding-bottom:max(48px,env(safe-area-inset-bottom));}button,a,input,select{touch-action:manipulation;}button,.outline-btn,.tab,.text-btn,.subtle-btn{min-height:44px;}input,select{font-size:16px;} .dialog{max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);overflow:auto;}@media(max-width:760px){.topbar{height:calc(64px + env(safe-area-inset-top));}.shell{padding-top:22px;padding-bottom:max(48px,env(safe-area-inset-bottom));}.auth-layout{min-height:calc(100dvh - 140px - env(safe-area-inset-top));}.wallet-actions button{min-height:46px;}}@media(display-mode:standalone){.topbar{padding-top:env(safe-area-inset-top);}}
+/* SApay Sudan identity — obsidian, brushed gold and Sudan-inspired accents */
+:root{color-scheme:dark;--navy:#090a0c;--navy2:#151719;--green:#d6b66b;--mint:#252218;--ink:#f3efe5;--muted:#a59e90;--line:#35312a;--surface:#141516;--bg:#090a0c;--shadow:0 18px 48px #0008}
+html,body{background:#090a0c;color:#f3efe5}
+body{background:radial-gradient(ellipse at 15% 12%,#252016 0,transparent 38%),radial-gradient(ellipse at 88% 75%,#142019 0,transparent 32%),#090a0c}
+.topbar{background:#0b0c0d;border-bottom:1px solid #3b3324}
+.brand{color:#f5f0e5}.brand-mark{background:linear-gradient(145deg,#e2c77e,#9e7935);color:#101010;border-radius:11px;box-shadow:0 5px 18px #d6b66b30}.brand-green{color:#d6b66b}
+.demo-pill{background:#2b2111;color:#e6c77e;border-color:#594626}.demo-pill i{background:#d6b66b}
+.eyebrow{color:#d6b66b}.intro h1,.welcome-row h1,.auth-panel h2,.dialog h2,.section-heading h2,.wallet-currency,.wallet-balance,.history-title{color:#f4eddf}
+.intro h1 span{color:#d6b66b}.intro>p,.feature-line{color:#c1b9aa}.feature-line span{background:#272319;color:#dfc37c}
+.panel,.auth-panel,.wallet-card,.history-list{background:linear-gradient(155deg,#191a1b,#111213);border-color:#3b352a;box-shadow:0 18px 48px #0007}
+.tabs{background:#202020}.tab{color:#b5ad9f}.tab.active{background:#39301e;color:#f5d98e;box-shadow:inset 0 0 0 1px #76603a}
+label{color:#d4cbbb}input,select{background:#0d0e0f;border-color:#484239;color:#f4eddf}
+input::placeholder{color:#777166}input:focus,select:focus{border-color:#d6b66b;box-shadow:0 0 0 3px #d6b66b20}
+.primary{background:linear-gradient(135deg,#e2c77e,#b28b42);color:#111;font-weight:850}.primary:hover{background:linear-gradient(135deg,#f0d993,#c49a4b)}
+.muted{color:#aaa294}.secure-label{background:#242018;color:#e3c779}
+.notice{background:#241e12;border-color:#70582c;color:#e7d4a5}
+.balance-card{background:linear-gradient(120deg,#171819 0%,#242018 58%,#183026 100%);border:1px solid #80673a;box-shadow:0 18px 42px #0009}
+.balance-top,.balance-foot{color:#d6c9ad}.balance-icon{color:#e1c47b}
+.currency-icon{background:#282318;color:#e1c47b;border:1px solid #59492c}
+.wallet-id{color:#a49b8c}.outline-btn{background:#262117;color:#e4c77d;border-color:#67532f}.outline-btn:hover{background:#352b18}
+.history-list{color:#eee}.history-item{border-color:#39352e}.history-meta{color:#a79f91}
+.history-amount.credit{color:#9bd0a8}.history-amount.debit{color:#e5a29a}
+.footer-note{color:#8e877b}.footer-note a{color:#d6b66b}
+.dialog{background:#151617;color:#f4eddf;border-color:#51452e}.close-btn{background:#2a2926;color:#e9d7aa}
+.toast{background:#292318;border:1px solid #6d5830;color:#f5e4b5}
+@media(max-width:760px){.intro h1{font-size:33px}.auth-layout{gap:20px}.topbar{background:#0b0c0d}}
+/* Sudan flag accent: a restrained green-red-white signature, not a competing palette */
+.brand-mark:after{content:"";position:absolute;width:4px;height:20px;right:0;top:8px;border-radius:4px;background:linear-gradient(to bottom,#d92828 0 33%,#f4efe5 33% 66%,#16834b 66%)}
+.brand-mark{position:relative;overflow:hidden}
