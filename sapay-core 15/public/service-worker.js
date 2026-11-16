@@ -1,5 +1,5 @@
 'use strict';
-const CACHE_NAME = 'sapay-iphone-shell-v2';
+const CACHE_NAME = 'sapay-iphone-shell-v3';
 const APP_SHELL = ['/', '/index.html', '/styles.css', '/app.js', '/manifest.webmanifest', '/icons/sapay-192.svg', '/icons/sapay-512.svg'];
 
 self.addEventListener('install', (event) => {
@@ -10,7 +10,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
-      keys.filter((key) => key === 'sapay-beta-shell-v1').map((key) => caches.delete(key))
+      keys.filter((key) => key.startsWith('sapay-iphone-shell-') || key === 'sapay-beta-shell-v1').map((key) => caches.delete(key))
     ))
   );
   self.clients.claim();
