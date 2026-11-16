@@ -141,3 +141,64 @@ $('refreshBtn').addEventListener('click', refreshData);
 if (state.token) {
   api('/demo/wallets').then(async () => { state.user = { email: 'حسابك' }; await showDashboard(); }).catch(() => logout(false));
 }
+
+/* SApay multi-page experience: build page shell around existing live wallet modules */
+(function installMultiPageExperience(){
+  const root=$('appView');
+  if(!root || root.dataset.multiPageReady==='1') return;
+  root.dataset.multiPageReady='1';
+  const notice=root.querySelector('.notice');
+  const balance=root.querySelector('.balance-card');
+  const walletHeading=root.querySelector('#createWalletBtn')?.closest('.section-heading');
+  const wallets=$('wallets');
+  const historyHeading=root.querySelector('#refreshBtn')?.closest('.section-heading');
+  const history=$('history');
+  const nav=document.createElement('nav');
+  nav.className='app-nav'; nav.setAttribute('aria-label','التنقل الرئيسي');
+  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['account','◎','حسابي']];
+  definitions.forEach(([key,icon,label],i)=>{
+    const button=document.createElement('button'); button.type='button'; button.className='nav-item'+(i===0?' active':'');
+    button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
+  });
+  notice?.after(nav);
+  const makePage=(key)=>{const section=document.createElement('section');section.className='page-view'+(key==='home'?' active':'');section.dataset.view=key;return section;};
+  const pages={}; definitions.forEach(([key])=>pages[key]=makePage(key));
+  if(balance) pages.home.append(balance);
+  const shortcuts=document.createElement('div');shortcuts.className='home-shortcuts';
+  shortcuts.innerHTML='<button class="shortcut-card" data-go="wallets" type="button"><span>◈</span><b>إدارة المحافظ</b><small>الأرصدة والمحافظ</small></button><button class="shortcut-card" data-go="transfers" type="button"><span>⇄</span><b>تحويل تجريبي</b><small>بين محافظ SApay</small></button><button class="shortcut-card" data-go="services" type="button"><span>▦</span><b>الخدمات</b><small>الفواتير والخدمات السودانية</small></button>';
+  pages.home.append(shortcuts);
+  if(walletHeading) pages.wallets.append(walletHeading);
+  if(wallets) pages.wallets.append(wallets);
+  if(historyHeading) pages.history.append(historyHeading);
+  if(history) pages.history.append(history);
+  const intro=(eyebrow,title,description)=>'<div class="page-intro"><div class="eyebrow">'+eyebrow+'</div><h2>'+title+'</h2><p>'+description+'</p></div>';
+  pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
+    '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
+    '<div class="notice">لا يدعم هذا النموذج التحويل إلى بنك أو محفظة خارجية، ولا ينفّذ أي حركة مالية حقيقية.</div>';
+  pages.services.innerHTML=intro('منظومة خدمات السودان','الخدمات والمدفوعات','مساحة مخصصة لربط الخدمات السودانية ضمن مراحل التطوير القادمة.')+
+    '<div class="service-grid">'+
+    '<article class="service-card"><span>▤</span><h3>فواتير الاتصالات</h3><p>شركات الاتصالات السودانية</p><em>قيد التطوير</em></article>'+
+    '<article class="service-card"><span>▧</span><h3>الخدمات الحكومية</h3><p>رسوم ومعاملات حكومية</p><em>قيد التطوير</em></article>'+
+    '<article class="service-card"><span>⌂</span><h3>التحويل إلى البنوك</h3><p>تصور تكامل مصرفي مستقبلي</p><em>غير متاح تجريبيًا</em></article>'+
+    '<article class="service-card"><span>◎</span><h3>التحويلات الدولية</h3><p>تصور خدمات عابرة للحدود</p><em>قيد التطوير</em></article>'+
+    '<article class="service-card"><span>▣</span><h3>سداد الفواتير</h3><p>خدمات المرافق والاشتراكات</p><em>قيد التطوير</em></article>'+
+    '<article class="service-card"><span>＋</span><h3>خدمات أخرى</h3><p>إضافات ضمن المنظومة</p><em>قيد التخطيط</em></article></div>';
+  pages.account.innerHTML=intro('الإعدادات والملف الشخصي','حسابي','معلومات حسابك وروابط السياسات وقنوات المساعدة.')+
+    '<div class="account-card panel"><span class="account-icon">◎</span><div><small>البريد الإلكتروني المسجل</small><strong id="accountEmail">—</strong><small>نوع البيئة</small><strong>نسخة تجريبية فقط</strong></div></div>'+
+    '<div class="account-links"><a href="/privacy.html">سياسة الخصوصية <span>←</span></a><a href="/support.html">الدعم والمساعدة <span>←</span></a><button id="accountLogout" type="button">تسجيل الخروج <span>←</span></button></div>'+
+    '<div class="notice">لا تشارك كلمة المرور أو رموز الدخول. لا تستخدم بيانات مصرفية حقيقية داخل النسخة التجريبية.</div>';
+  definitions.forEach(([key])=>root.append(pages[key]));
+  const go=(key)=>{
+    definitions.forEach(([name])=>{pages[name].classList.toggle('active',name===key);nav.querySelector('[data-page="'+name+'"]').classList.toggle('active',name===key);});
+    if(key==='history') loadHistory();
+    if(key==='account') $('accountEmail').textContent=state.user?.email||'حسابك التجريبي';
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+  nav.addEventListener('click',e=>{const button=e.target.closest('[data-page]');if(button)go(button.dataset.page);});
+  shortcuts.addEventListener('click',e=>{const button=e.target.closest('[data-go]');if(button)go(button.dataset.go);});
+  $('startTransferBtn').addEventListener('click',()=>{
+    if(!state.wallets.length){toast('أنشئ محفظة أولًا للبدء.');go('wallets');return;}
+    openAction('transfer',state.wallets[0].id);
+  });
+  $('accountLogout').addEventListener('click',()=>logout());
+})();
