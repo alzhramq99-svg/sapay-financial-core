@@ -155,7 +155,7 @@ if (state.token) {
   const history=$('history');
   const nav=document.createElement('nav');
   nav.className='app-nav'; nav.setAttribute('aria-label','التنقل الرئيسي');
-  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['account','◎','حسابي']];
+  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['account','◎','حسابي'],['support','?','المساعدة'],['settings','⚙','الإعدادات']];
   definitions.forEach(([key,icon,label],i)=>{
     const button=document.createElement('button'); button.type='button'; button.className='nav-item'+(i===0?' active':'');
     button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
@@ -187,6 +187,21 @@ if (state.token) {
     '<div class="account-card panel"><span class="account-icon">◎</span><div><small>البريد الإلكتروني المسجل</small><strong id="accountEmail">—</strong><small>نوع البيئة</small><strong>نسخة تجريبية فقط</strong></div></div>'+
     '<div class="account-links"><a href="/privacy.html">سياسة الخصوصية <span>←</span></a><a href="/support.html">الدعم والمساعدة <span>←</span></a><button id="accountLogout" type="button">تسجيل الخروج <span>←</span></button></div>'+
     '<div class="notice">لا تشارك كلمة المرور أو رموز الدخول. لا تستخدم بيانات مصرفية حقيقية داخل النسخة التجريبية.</div>';
+  pages.support.innerHTML=intro('مركز المساعدة','كيف نساعدك؟','إرشادات استخدام النسخة التجريبية ومعلومات الدعم.')+
+    '<div class="faq-list">'+
+    '<details class="faq-item"><summary>هل يمكنني إرسال أموال حقيقية؟</summary><p>لا. SApay في هذه المرحلة نموذج تجريبي فقط، وجميع الأرصدة والتحويلات افتراضية.</p></details>'+
+    '<details class="faq-item"><summary>كيف أنشئ محفظة؟</summary><p>افتح صفحة محافظي، ثم اضغط إنشاء محفظة واختر العملة المتاحة.</p></details>'+
+    '<details class="faq-item"><summary>كيف أحوّل إلى مستخدم آخر؟</summary><p>من صفحة التحويل التجريبي، اختر محفظة المصدر وأدخل معرّف محفظة المستلم الصحيح والمبلغ. يجب أن تتطابق العملة.</p></details>'+
+    '<details class="faq-item"><summary>هل التحويل إلى البنوك أو شركات الاتصالات متاح؟</summary><p>لا. تظهر هذه الخدمات ضمن خارطة الطريق فقط، ولا توجد تكاملات مصرفية أو حكومية فعالة.</p></details>'+
+    '<div class="support-contact panel"><h3>تحتاج إلى مساعدة إضافية؟</h3><p>راجع صفحة الدعم لمعرفة حالة قنوات التواصل الرسمية.</p><a class="primary support-link" href="/support.html">فتح صفحة الدعم</a></div></div>';
+  pages.settings.innerHTML=intro('تفضيلات الحساب','الإعدادات','إعدادات النسخة التجريبية والخصوصية.')+
+    '<div class="settings-list">'+
+    '<div class="setting-row"><div><b>اللغة</b><small>لغة واجهة التطبيق الحالية</small></div><strong>العربية</strong></div>'+
+    '<div class="setting-row"><div><b>اتجاه العرض</b><small>واجهة من اليمين إلى اليسار</small></div><strong>RTL</strong></div>'+
+    '<div class="setting-row"><div><b>بيئة التشغيل</b><small>لا توجد أموال حقيقية أو ربط مصرفي</small></div><strong>Demo</strong></div>'+
+    '<a class="setting-row" href="/privacy.html"><div><b>سياسة الخصوصية</b><small>معلومات الخصوصية والبيانات</small></div><span>←</span></a>'+
+    '<a class="setting-row" href="/support.html"><div><b>الدعم والمساعدة</b><small>قنوات التواصل وحالة الدعم</small></div><span>←</span></a>'+
+    '</div><div class="notice">لا تغيّر هذه الإعدادات طريقة معالجة البيانات أو صلاحيات الحساب. لا تدخل معلومات مالية أو شخصية حساسة في النسخة التجريبية.</div>';
   definitions.forEach(([key])=>root.append(pages[key]));
   const go=(key)=>{
     definitions.forEach(([name])=>{pages[name].classList.toggle('active',name===key);nav.querySelector('[data-page="'+name+'"]').classList.toggle('active',name===key);});
