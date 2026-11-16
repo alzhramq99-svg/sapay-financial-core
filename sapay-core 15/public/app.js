@@ -153,6 +153,7 @@ if (state.token) {
   const wallets=$('wallets');
   const historyHeading=root.querySelector('#refreshBtn')?.closest('.section-heading');
   const history=$('history');
+  const footer=root.querySelector('.footer-note');
   const nav=document.createElement('nav');
   nav.className='app-nav'; nav.setAttribute('aria-label','التنقل الرئيسي');
   const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['account','◎','حسابي'],['support','?','المساعدة'],['settings','⚙','الإعدادات']];
@@ -167,6 +168,7 @@ if (state.token) {
   const shortcuts=document.createElement('div');shortcuts.className='home-shortcuts';
   shortcuts.innerHTML='<button class="shortcut-card" data-go="wallets" type="button"><span>◈</span><b>إدارة المحافظ</b><small>الأرصدة والمحافظ</small></button><button class="shortcut-card" data-go="transfers" type="button"><span>⇄</span><b>تحويل تجريبي</b><small>بين محافظ SApay</small></button><button class="shortcut-card" data-go="services" type="button"><span>▦</span><b>الخدمات</b><small>الفواتير والخدمات السودانية</small></button>';
   pages.home.append(shortcuts);
+  if(footer) pages.home.append(footer);
   if(walletHeading) pages.wallets.append(walletHeading);
   if(wallets) pages.wallets.append(wallets);
   if(historyHeading) pages.history.append(historyHeading);
