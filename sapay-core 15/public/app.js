@@ -175,14 +175,40 @@ if (state.token) {
   pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
     '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
     '<div class="notice">لا يدعم هذا النموذج التحويل إلى بنك أو محفظة خارجية، ولا ينفّذ أي حركة مالية حقيقية.</div>';
-  pages.services.innerHTML=intro('منظومة خدمات السودان','الخدمات والمدفوعات','مساحة مخصصة لربط الخدمات السودانية ضمن مراحل التطوير القادمة.')+
+  pages.services.innerHTML=intro('منظومة خدمات السودان','الخدمات والمدفوعات','استعرض الجهات السودانية والخدمات المستهدفة. جميع خيارات السداد والربط معروضة للتعريف والتخطيط فقط، وليست متاحة للدفع الحقيقي.')+
     '<div class="service-grid">'+
-    '<article class="service-card"><span>▤</span><h3>فواتير الاتصالات</h3><p>شركات الاتصالات السودانية</p><em>قيد التطوير</em></article>'+
-    '<article class="service-card"><span>▧</span><h3>الخدمات الحكومية</h3><p>رسوم ومعاملات حكومية</p><em>قيد التطوير</em></article>'+
+    '<article class="service-card"><span>▤</span><h3>فواتير الاتصالات</h3><p>زين، سوداني، MTN، كنار</p><em>عرض الجهات</em></article>'+
+    '<article class="service-card"><span>▧</span><h3>الخدمات الحكومية</h3><p>الجوازات، المرور، الأحوال المدنية وغيرها</p><em>قيد التطوير</em></article>'+
+    '<article class="service-card"><span>▣</span><h3>رسوم الجامعات والكليات</h3><p>قائمة المؤسسات التعليمية السودانية</p><em>دليل تعريفي</em></article>'+
     '<article class="service-card"><span>⌂</span><h3>التحويل إلى البنوك</h3><p>تصور تكامل مصرفي مستقبلي</p><em>غير متاح تجريبيًا</em></article>'+
     '<article class="service-card"><span>◎</span><h3>التحويلات الدولية</h3><p>تصور خدمات عابرة للحدود</p><em>قيد التطوير</em></article>'+
-    '<article class="service-card"><span>▣</span><h3>سداد الفواتير</h3><p>خدمات المرافق والاشتراكات</p><em>قيد التطوير</em></article>'+
-    '<article class="service-card"><span>＋</span><h3>خدمات أخرى</h3><p>إضافات ضمن المنظومة</p><em>قيد التخطيط</em></article></div>';
+    '<article class="service-card"><span>＋</span><h3>خدمات أخرى</h3><p>إضافات ضمن المنظومة</p><em>قيد التخطيط</em></article></div>'+
+    '<div class="service-directory">'+
+    '<section class="directory-panel"><div class="directory-heading"><span>01</span><div><h3>شركات الاتصالات السودانية</h3><p>الجهات المعروفة في قطاع الاتصالات</p></div></div><div class="directory-list">'+
+    '<div class="directory-item"><b>زين السودان</b><small>Zain Sudan · اتصالات وإنترنت</small><em>استعراض فقط</em></div>'+
+    '<div class="directory-item"><b>سوداني</b><small>Sudani · مجموعة سوداتل</small><em>استعراض فقط</em></div>'+
+    '<div class="directory-item"><b>MTN السودان</b><small>MTN Sudan · اتصالات وإنترنت</small><em>استعراض فقط</em></div>'+
+    '<div class="directory-item"><b>كنار</b><small>Canar Telecom · اتصالات وخدمات إنترنت</small><em>استعراض فقط</em></div>'+
+    '</div></section>'+
+    '<section class="directory-panel"><div class="directory-heading"><span>02</span><div><h3>الخدمات الحكومية</h3><p>تصنيف المعاملات الحكومية المقترحة</p></div></div><div class="directory-list">'+
+    '<div class="directory-item"><b>الإدارة العامة للجوازات والهجرة</b><small>إصدار وتجديد الجوازات، والاستعلام عن المعاملات</small><em>غير متاح للدفع</em></div>'+
+    '<div class="directory-item"><b>الإدارة العامة للمرور</b><small>رسوم وتجديد رخص القيادة، وترخيص المركبات والمخالفات</small><em>غير متاح للدفع</em></div>'+
+    '<div class="directory-item"><b>السجل المدني والأحوال المدنية</b><small>شهادات الميلاد والوفاة والرقم الوطني</small><em>قيد الدراسة</em></div>'+
+    '<div class="directory-item"><b>الخدمات الضريبية والزكوية</b><small>الاستعلام عن الرسوم والسداد الحكومي</small><em>قيد الدراسة</em></div>'+
+    '<div class="directory-item"><b>الأراضي والتسجيلات</b><small>رسوم المعاملات والشهادات</small><em>قيد الدراسة</em></div>'+
+    '<div class="directory-item"><b>المحليات والولايات</b><small>رسوم الخدمات والتصاديق المحلية</small><em>قيد الدراسة</em></div>'+
+    '</div></section>'+
+    '<section class="directory-panel"><div class="directory-heading"><span>03</span><div><h3>رسوم الجامعات والكليات</h3><p>ابحث عن المؤسسة التعليمية لعرضها ضمن دليل رسوم الطلاب</p></div></div>'+
+    '<label class="directory-search-label" for="institutionSearch">ابحث باسم الجامعة أو الكلية</label><input id="institutionSearch" class="directory-search" type="search" placeholder="مثال: جامعة الخرطوم، جامعة السودان..." autocomplete="off">'+
+    '<div class="institution-group"><h4>جامعات حكومية</h4><div id="publicInstitutions" class="institution-chips"></div></div>'+
+    '<div class="institution-group"><h4>جامعات أهلية وخاصة وكليات</h4><div id="privateInstitutions" class="institution-chips"></div></div>'+
+    '<p class="directory-footnote">الأسماء دليل أولي للتصنيف فقط. لم يتم ربط أي جامعة بنظام تحصيل الرسوم، ويجب اعتماد المؤسسات والبرامج والرسوم رسميًا قبل إتاحة الدفع.</p></section></div>';
+  const publicInstitutions=['جامعة الخرطوم','جامعة السودان للعلوم والتكنولوجيا','جامعة النيلين','جامعة بحري','جامعة أم درمان الإسلامية','جامعة الجزيرة','جامعة وادي النيل','جامعة شندي','جامعة كسلا','جامعة القضارف','جامعة البحر الأحمر','جامعة دنقلا','جامعة سنار','جامعة النيل الأزرق','جامعة كردفان','جامعة الفاشر','جامعة زالنجي','جامعة نيالا','جامعة بخت الرضا','جامعة القرآن الكريم والعلوم الإسلامية','جامعة الإمام المهدي','جامعة غرب كردفان','جامعة الدلنج','جامعة شرق كردفان','جامعة الجنينة','جامعة الضعين','جامعة المناقل','جامعة مروي التكنولوجية','جامعة السودان المفتوحة'];
+  const privateInstitutions=['جامعة الأحفاد للبنات','جامعة السودان العالمية','جامعة أم درمان الأهلية','جامعة العلوم والتقانة','جامعة العلوم الطبية والتكنولوجيا','جامعة المستقبل','جامعة المغتربين','جامعة ود مدني الأهلية','الجامعة الوطنية','جامعة المشرق','جامعة الرازي','الجامعة العربية المفتوحة','جامعة قاردن سيتي','جامعة ابن سينا','جامعة الشيخ عبدالله البدري','جامعة النيل','جامعة البيان','جامعة النصر','جامعة الشرق للعلوم والتكنولوجيا','جامعة بورتسودان الأهلية','كلية شرق النيل','كلية المدار','كلية السودان الجامعية للبنات','أكاديمية السودان للعلوم المصرفية والمالية','كلية كمبوني للعلوم والتكنولوجيا','كلية الإمام الهادي','كلية غرب النيل','كلية بحري الأهلية','كلية أم درمان للعلوم والتكنولوجيا','كلية اليرموك','كلية الكاملين للعلوم والتقانة','كلية النور للعلوم والتكنولوجيا','كلية ستارز للعلوم الطبية والتقنية','كلية الحكمة للعلوم والتكنولوجيا','كلية النهضة','كلية الصفوة','كلية السلامة للعلوم والتكنولوجيا','كلية الريادة','كلية الأفق للعلوم والتكنولوجيا','كلية مكة التقنية لطب العيون','كلية نبتة','كلية الجزيرة للعلوم الطبية والتكنولوجيا','كلية الفجر للعلوم والتكنولوجيا','كلية فكتوريا للعلوم والتكنولوجيا','كلية القضارف للعلوم والتكنولوجيا','كلية المعرفة للعلوم والتكنولوجيا','كلية رويال للعلوم والتكنولوجيا','كلية شمال كردفان','كلية دار العلوم والتكنولوجيا','كلية المدائن للعلوم الطبية والتكنولوجيا'];
+  const renderInstitutions=(items,root)=>{root.innerHTML=items.map(name=>'<button type="button" class="institution-chip" data-institution="'+escapeHtml(name)+'">'+escapeHtml(name)+'</button>').join('');};
+  renderInstitutions(publicInstitutions,$('publicInstitutions'));renderInstitutions(privateInstitutions,$('privateInstitutions'));
+  $('institutionSearch').addEventListener('input',()=>{const q=$('institutionSearch').value.trim();renderInstitutions(publicInstitutions.filter(n=>n.includes(q)),$('publicInstitutions'));renderInstitutions(privateInstitutions.filter(n=>n.includes(q)),$('privateInstitutions'));});
+  pages.services.addEventListener('click',e=>{const item=e.target.closest('[data-institution]');if(item)toast('تم اختيار '+item.dataset.institution+' — عرض الرسوم والدفع غير متاحين في النسخة التجريبية.');});
   pages.account.innerHTML=intro('الإعدادات والملف الشخصي','حسابي','معلومات حسابك وروابط السياسات وقنوات المساعدة.')+
     '<div class="account-card panel"><span class="account-icon">◎</span><div><small>البريد الإلكتروني المسجل</small><strong id="accountEmail">—</strong><small>نوع البيئة</small><strong>نسخة تجريبية فقط</strong></div></div>'+
     '<div class="account-links"><a href="/privacy.html">سياسة الخصوصية <span>←</span></a><a href="/support.html">الدعم والمساعدة <span>←</span></a><button id="accountLogout" type="button">تسجيل الخروج <span>←</span></button></div>'+
