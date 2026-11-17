@@ -125,7 +125,8 @@ function renderWallets() {
     <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل داخلي</button><button class="outline-btn" data-external="${escapeHtml(w.id)}">تحويل خارجي تجريبي</button></div>
   </article>`).join('');
   root.querySelectorAll('[data-credit]').forEach(btn => btn.addEventListener('click', () => openAction('credit', btn.dataset.credit)));
-  root.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => openAction('transfer', btn.dataset.send)));\n  root.querySelectorAll('[data-external]').forEach(btn => btn.addEventListener('click', () => openAction('external', btn.dataset.external)));
+  root.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => openAction('transfer', btn.dataset.send)));
+  root.querySelectorAll('[data-external]').forEach(btn => btn.addEventListener('click', () => openAction('external', btn.dataset.external)));
 }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 async function loadHistory() {
@@ -174,7 +175,7 @@ $('actionForm').addEventListener('submit', async (event) => {
       if (mode === 'GLOBAL' && !destinationCountry) throw new Error('أدخل دولة المستفيد للتحويل الدولي التجريبي.');
       await api('/transfers/external', { method:'POST', headers:{'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({ fromWalletId:walletId, amountMinor:amount, currency:source.currency, destinationType:mode, provider, beneficiaryName, destinationReference, destinationCountry }) });
     } else {
-      const destination = $('destinationWallet').value.trim().replace(/^ID\\s*:\\s*/i, '').trim();
+      const destination = $('destinationWallet').value.trim().replace(/^ID\s*:\s*/i, '').trim();
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       if (!destination) throw new Error('أدخل معرّف محفظة المستلم.');
       if (!uuidPattern.test(destination)) throw new Error('معرّف المحفظة غير صحيح. الصق المعرّف كاملًا أو السطر الذي يبدأ بـ ID:.');
@@ -322,4 +323,5 @@ if (state.token) {
     openAction('transfer',state.wallets[0].id);
   });
   $('accountLogout').addEventListener('click',()=>logout());
-$('externalMode').addEventListener('change', () => { $('externalCountryWrap').hidden = $('externalMode').value !== 'GLOBAL'; });\n})();
+$('externalMode').addEventListener('change', () => { $('externalCountryWrap').hidden = $('externalMode').value !== 'GLOBAL'; });
+})();
