@@ -66,3 +66,6 @@ input::placeholder{color:#777166}input:focus,select:focus{border-color:#d6b66b;b
 .institution-chip:active{background:rgba(213,180,106,.16)}
 .directory-footnote{margin-top:17px}
 @media(max-width:520px){.directory-panel{padding:15px}.directory-heading h3{font-size:17px}.directory-item{align-items:flex-start}.directory-item em{margin-inline-start:auto}}
+
+.biometric-login{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;padding:14px;border:1px solid rgba(213,180,106,.5);border-radius:14px;background:rgba(213,180,106,.08);color:#e6c77e;font:inherit;font-weight:700;cursor:pointer}
+.biometric-login[hidden]{display:none}.biometric-login:disabled{opacity:.55;cursor:wait}.biometric-login span{font-size:22px}
