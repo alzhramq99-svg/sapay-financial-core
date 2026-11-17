@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS external_transfers (
   destination_type VARCHAR(20) NOT NULL CHECK (destination_type IN ('SUDAN_BANK', 'GLOBAL')),
   provider VARCHAR(100) NOT NULL,
   beneficiary_name VARCHAR(120) NOT NULL,
-  destination_reference VARCHAR(64) NOT NULL CHECK (destination_reference ~* '^DEMO-[A-Z0-9-]{4,60}$'),
+  destination_reference VARCHAR(65) NOT NULL CHECK (destination_reference ~* '^DEMO-[A-Z0-9-]{4,60}$'),
   destination_country VARCHAR(80),
   amount_minor NUMERIC(38,0) NOT NULL CHECK (amount_minor > 0),
   currency CHAR(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
