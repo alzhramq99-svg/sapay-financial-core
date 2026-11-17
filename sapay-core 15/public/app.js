@@ -156,7 +156,7 @@ if (state.token) {
   const footer=root.querySelector('.footer-note');
   const nav=document.createElement('nav');
   nav.className='app-nav'; nav.setAttribute('aria-label','التنقل الرئيسي');
-  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['account','◎','حسابي'],['support','?','المساعدة'],['settings','⚙','الإعدادات']];
+  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['support','?','المساعدة'],['account','◎','حسابي'],['settings','⚙','الإعدادات']];
   definitions.forEach(([key,icon,label],i)=>{
     const button=document.createElement('button'); button.type='button'; button.className='nav-item'+(i===0?' active':'');
     button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
@@ -218,7 +218,9 @@ if (state.token) {
     '<div id="globalDestinations" class="directory-list"></div>'+
     '<p class="directory-footnote">هذه وجهات مقترحة للتخطيط وليست ممرات تحويل مفعّلة. لم يتم ربط SApay بمصارف مراسلة أو شبكات تحويل دولية أو مزودي صرف.</p></section></div>';
   const publicInstitutions=['جامعة الخرطوم','جامعة السودان للعلوم والتكنولوجيا','جامعة النيلين','جامعة بحري','جامعة أم درمان الإسلامية','جامعة الجزيرة','جامعة وادي النيل','جامعة شندي','جامعة كسلا','جامعة القضارف','جامعة البحر الأحمر','جامعة دنقلا','جامعة سنار','جامعة النيل الأزرق','جامعة كردفان','جامعة الفاشر','جامعة زالنجي','جامعة نيالا','جامعة بخت الرضا','جامعة القرآن الكريم والعلوم الإسلامية','جامعة الإمام المهدي','جامعة غرب كردفان','جامعة الدلنج','جامعة شرق كردفان','جامعة الجنينة','جامعة الضعين','جامعة المناقل','جامعة مروي التكنولوجية','جامعة السودان المفتوحة'];
+  publicInstitutions.sort((a,b)=>a.localeCompare(b,'ar'));
   const privateInstitutions=['جامعة الأحفاد للبنات','جامعة السودان العالمية','جامعة أم درمان الأهلية','جامعة العلوم والتقانة','جامعة العلوم الطبية والتكنولوجيا','جامعة المستقبل','جامعة المغتربين','جامعة ود مدني الأهلية','الجامعة الوطنية','جامعة المشرق','جامعة الرازي','الجامعة العربية المفتوحة','جامعة قاردن سيتي','جامعة ابن سينا','جامعة الشيخ عبدالله البدري','جامعة النيل','جامعة البيان','جامعة النصر','جامعة الشرق للعلوم والتكنولوجيا','جامعة بورتسودان الأهلية','كلية شرق النيل','كلية المدار','كلية السودان الجامعية للبنات','أكاديمية السودان للعلوم المصرفية والمالية','كلية كمبوني للعلوم والتكنولوجيا','كلية الإمام الهادي','كلية غرب النيل','كلية بحري الأهلية','كلية أم درمان للعلوم والتكنولوجيا','كلية اليرموك','كلية الكاملين للعلوم والتقانة','كلية النور للعلوم والتكنولوجيا','كلية ستارز للعلوم الطبية والتقنية','كلية الحكمة للعلوم والتكنولوجيا','كلية النهضة','كلية الصفوة','كلية السلامة للعلوم والتكنولوجيا','كلية الريادة','كلية الأفق للعلوم والتكنولوجيا','كلية مكة التقنية لطب العيون','كلية نبتة','كلية الجزيرة للعلوم الطبية والتكنولوجيا','كلية الفجر للعلوم والتكنولوجيا','كلية فكتوريا للعلوم والتكنولوجيا','كلية القضارف للعلوم والتكنولوجيا','كلية المعرفة للعلوم والتكنولوجيا','كلية رويال للعلوم والتكنولوجيا','كلية شمال كردفان','كلية دار العلوم والتكنولوجيا','كلية المدائن للعلوم الطبية والتكنولوجيا'];
+  privateInstitutions.sort((a,b)=>a.localeCompare(b,'ar'));
   const renderInstitutions=(items,root)=>{root.innerHTML=items.map(name=>'<button type="button" class="institution-chip" data-institution="'+escapeHtml(name)+'">'+escapeHtml(name)+'</button>').join('');};
   const publicRoot=pages.services.querySelector('#publicInstitutions');
   const privateRoot=pages.services.querySelector('#privateInstitutions');
@@ -226,7 +228,9 @@ if (state.token) {
   renderInstitutions(publicInstitutions,publicRoot);renderInstitutions(privateInstitutions,privateRoot);
   institutionSearch.addEventListener('input',()=>{const q=institutionSearch.value.trim();renderInstitutions(publicInstitutions.filter(n=>n.includes(q)),publicRoot);renderInstitutions(privateInstitutions.filter(n=>n.includes(q)),privateRoot);});
   const sudaneseBanks=['بنك الخرطوم','بنك فيصل الإسلامي','بنك أم درمان الوطني','بنك النيلين','البنك الزراعي السوداني','بنك التنمية الصناعية','بنك تنمية الصادرات','بنك الادخار والتنمية الاجتماعية','بنك الثروة الحيوانية','بنك العمال الوطني','البنك الإسلامي السوداني','البنك السوداني الفرنسي','البنك السوداني المصري','البنك العربي السوداني','البنك السعودي السوداني','بنك قطر الوطني – فرع السودان','بنك قطر الإسلامي – فرع السودان','بنك السلام','بنك البركة السوداني','بنك الخليج','بنك الجزيرة السوداني الأردني','بنك بيبلوس أفريقيا','بنك النيل الأزرق المشرق','بنك النيل للتجارة والتنمية','البنك التجاري للمزارعين','بنك الاستثمار المالي','بنك الأسرة','بنك العاصمة المتحد','بنك آيفوري','بنك البلد','بنك أفريقيا والخليج','بنك التضامن الإسلامي','البنك الوطني السوداني','البنك الأهلي المصري – فرع الخرطوم','بنك الساحل والصحراء','بنك العقارات التجارية','مصرف أبوظبي الإسلامي – السودان','بنك أبوظبي الوطني – السودان','بنك زراعات كاتيليم'];
+  sudaneseBanks.sort((a,b)=>a.localeCompare(b,'ar'));
   const globalDestinations=['الإمارات العربية المتحدة','المملكة العربية السعودية','مصر','قطر','الكويت','البحرين','سلطنة عُمان','تركيا','المملكة المتحدة','الولايات المتحدة الأمريكية','دول الاتحاد الأوروبي','الأردن','لبنان'];
+  globalDestinations.sort((a,b)=>a.localeCompare(b,'ar'));
   const renderDirectory=(items,root,attribute)=>{root.innerHTML=items.map(name=>'<div class="directory-item"><b>'+escapeHtml(name)+'</b><em>قيد التخطيط · غير متاح للتحويل</em></div>').join('');};
   const bankRoot=pages.services.querySelector('#sudanBanks');
   const bankSearch=pages.services.querySelector('#bankSearch');
