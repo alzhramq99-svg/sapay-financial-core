@@ -15,7 +15,7 @@ const value = '<string>يستخدم SApay Face ID للتحقق من هويتك �
 if (!plist.includes(key)) {
   const closingIndex = plist.lastIndexOf('</dict>');
   if (closingIndex < 0) throw new Error('Info.plist is missing its root dict element.');
-  plist = `${plist.slice(0, closingIndex)}  ${key}\\n  ${value}\\n${plist.slice(closingIndex)}`;
+  plist = `${plist.slice(0, closingIndex)}  ${key}\n  ${value}\n${plist.slice(closingIndex)}`;
   await writeFile(plistPath, plist, 'utf8');
 }
 console.log('Configured NSFaceIDUsageDescription in iOS Info.plist.');
