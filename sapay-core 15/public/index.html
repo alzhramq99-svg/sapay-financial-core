@@ -73,6 +73,14 @@
     <form method="dialog" class="dialog-head"><h2 id="actionTitle">عملية تجريبية</h2><button class="close-btn" aria-label="إغلاق">×</button></form>
     <form id="actionForm">
       <input id="actionType" type="hidden">
+      <div id="externalModeWrap" hidden><label for="externalMode">نوع التحويل الخارجي</label><select id="externalMode"><option value="SUDAN_BANK">إلى بنك سوداني (تجريبي)</option><option value="GLOBAL">تحويل دولي (تجريبي)</option></select></div>
+      <div id="externalFields" hidden>
+        <label for="externalProvider">البنك أو جهة التحويل</label><input id="externalProvider" maxlength="100" placeholder="مثال: بنك الخرطوم التجريبي">
+        <label for="externalBeneficiary">اسم المستفيد التجريبي</label><input id="externalBeneficiary" maxlength="120" placeholder="مستفيد تجريبي">
+        <label for="externalReference">مرجع مستفيد وهمي</label><input id="externalReference" maxlength="64" placeholder="DEMO-TEST-0001">
+        <div id="externalCountryWrap" hidden><label for="externalCountry">الدولة</label><input id="externalCountry" maxlength="80" placeholder="مثال: مصر"></div>
+        <p class="muted small">استخدم بيانات وهمية فقط. لن يتم إرسال أي أموال أو الاتصال ببنك أو شركة تحويل.</p>
+      </div>
       <label for="sourceWallet">المحفظة المصدر</label><select id="sourceWallet" required></select>
       <div id="destinationWrap"><label for="destinationWallet">معرّف محفظة المستلم</label><input id="destinationWallet" autocomplete="off" placeholder="الصق ID: ... أو المعرّف مباشرة" aria-describedby="destinationHelp"><p id="destinationHelp" class="muted small">يمكنك نسخ السطر كاملًا من بطاقة المحفظة، بما في ذلك ID:.</p></div>
       <div id="creditWrap" hidden><label for="creditReference">مرجع الشحن التجريبي</label><input id="creditReference" maxlength="100" placeholder="demo-credit-001"></div>
