@@ -25,6 +25,44 @@ async function api(path, options = {}) {
   return data;
 }
 function message(id, text, ok = false) { const el = $(id); el.textContent = text || ''; el.classList.toggle('success', !!ok); }
+const biometricServer = 'sapay-financial-core';
+async function configureFaceIdAfterLogin(email, password) {
+  if (!window.SApayBiometric?.isNative) return;
+  try {
+    const available = await window.SApayBiometric.isAvailable();
+    if (!available) return;
+    if (window.confirm('هل تريد تفعيل تسجيل الدخول باستخدام Face ID على هذا الجهاز؟')) {
+      await window.SApayBiometric.saveCredentials(email, password, biometricServer);
+      message('biometricMessage', 'تم تفعيل Face ID لهذا الجهاز.', true);
+    }
+  } catch (error) {
+    message('biometricMessage', 'تعذر تفعيل Face ID. يمكنك استخدام كلمة المرور كالمعتاد.');
+  }
+}
+$('faceIdLogin').addEventListener('click', async () => {
+  const button = $('faceIdLogin');
+  button.disabled = true;
+  message('biometricMessage', 'يرجى تأكيد هويتك عبر Face ID…');
+  try {
+    if (!window.SApayBiometric?.isNative) throw new Error('Face ID متاح داخل تطبيق iOS فقط.');
+    const credentials = await window.SApayBiometric.getCredentials(biometricServer);
+    const result = await api('/auth/login', { method: 'POST', body: JSON.stringify(credentials) });
+    state.token = result.accessToken; state.user = result.user; sessionStorage.setItem('sapay_access_token', state.token);
+    if (state.authMode === 'login') await configureFaceIdAfterLogin($('email').value.trim(), $('password').value);
+    await showDashboard();
+  } catch (error) {
+    message('biometricMessage', error.message || 'تعذر تسجيل الدخول باستخدام Face ID.');
+  } finally { button.disabled = false; }
+});
+async function initializeFaceId() {
+  const button = $('faceIdLogin');
+  if (!window.SApayBiometric?.isNative) return;
+  try {
+    if (await window.SApayBiometric.hasCredentials(biometricServer)) button.hidden = false;
+  } catch { /* Keep password login available if biometric setup is unavailable. */ }
+}
+initializeFaceId();
+
 function toast(text) { const el = $('toast'); el.textContent = text; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2600); }
 function setAuthMode(mode) {
   state.authMode = mode;
