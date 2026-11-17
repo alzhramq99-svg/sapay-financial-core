@@ -184,7 +184,7 @@ $('actionForm').addEventListener('submit', async (event) => {
       if (!destination) throw new Error('أدخل معرّف محفظة المستلم.');
       if (!uuidPattern.test(destination)) throw new Error('معرّف المحفظة غير صحيح. الصق المعرّف كاملًا أو السطر الذي يبدأ بـ ID:.');
       const source = state.wallets.find(w => w.id === walletId);
-      await api('/transfers', { method:'POST', headers:{'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({ fromWalletId:walletId, toWalletId:destination, amountMinor:amount, currency:source.currency }) });
+      await api('/transfers', { method:'POST', headers:{'Idempotency-Key':actionIdempotencyKey}, body:JSON.stringify({ fromWalletId:walletId, toWalletId:destination, amountMinor:amount, currency:source.currency }) });
     }
     $('actionDialog').close(); toast(type === 'external' ? 'تم تسجيل التحويل الخارجي التجريبي دون إرساله.' : 'تم تسجيل العملية في قاعدة البيانات التجريبية.'); await refreshData();
   } catch (error) { message('actionMessage', error.message); }
