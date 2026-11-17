@@ -15,6 +15,9 @@ async function isAvailable(): Promise<boolean> {
 }
 
 async function saveCredentials(username: string, password: string, server = SERVER): Promise<void> {
+  if (typeof username !== 'string' || !username.trim() || typeof password !== 'string' || !password) {
+    throw new Error('بيانات الدخول غير مكتملة؛ سجّل الدخول بكلمة المرور أولاً.');
+  }
   if (!native) throw new Error('Face ID متاح داخل تطبيق iOS فقط.');
   const result = await NativeBiometric.isAvailable();
   if (!result.isAvailable) throw new Error('لم يتم إعداد Face ID على هذا الجهاز.');
