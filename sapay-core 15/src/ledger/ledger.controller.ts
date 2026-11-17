@@ -15,6 +15,12 @@ export class LedgerController {
     return this.ledger.transfer({...body,userId:req.user.userId,idempotencyKey:idempotencyKey??''});
   }
   @UseGuards(AuthGuard)
+  @Post('transfers/external')
+  externalTransfer(@Req() req: AuthRequest, @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Body() body: {fromWalletId:string;amountMinor:string;currency:string;destinationType:'SUDAN_BANK'|'GLOBAL';provider:string;beneficiaryName:string;destinationReference:string;destinationCountry?:string}) {
+    return this.ledger.externalTransfer({...body,userId:req.user.userId,idempotencyKey:idempotencyKey??''});
+  }
+  @UseGuards(AuthGuard)
   @Get('ledger/journals')
   journals(@Req() req: AuthRequest) { return this.ledger.listJournals(req.user.userId); }
 }
