@@ -1,6 +1,7 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 const state = { token: sessionStorage.getItem('sapay_access_token') || '', user: null, wallets: [], authMode: 'login' };
+let actionIdempotencyKey = '';
 const money = (minor) => { try { return BigInt(minor || '0').toLocaleString('en-US'); } catch { return '0'; } };
 const headers = () => ({ 'Content-Type': 'application/json', ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}) });
 const nativeRuntime = window.location.protocol === 'capacitor:';
@@ -137,7 +138,8 @@ async function loadHistory() {
       const credit = row.type === 'DEMO_CREDIT'; const posting = (row.postings || []).find(p => p.side === (credit ? 'CREDIT' : 'CREDIT')) || (row.postings || [])[0];
       const amount = posting?.amountMinor || '—'; const currency = posting?.currency || '';
       const date = row.createdAt ? new Date(row.createdAt).toLocaleString('ar') : '';
-      return `<div class="history-item"><div><div class="history-title">${credit ? 'شحن رصيد تجريبي' : 'تحويل بين محافظ'}</div><div class="history-meta">${escapeHtml(date)} · ${escapeHtml(row.status || 'مكتمل')}</div></div><div class="history-amount ${credit ? 'credit' : 'debit'}">${money(amount)} ${escapeHtml(currency)}</div></div>`;
+      const title = credit ? 'شحن رصيد تجريبي' : row.type === 'EXTERNAL_TRANSFER' ? 'تحويل خارجي تجريبي (لم يُرسل)' : 'تحويل بين محافظ';
+      return `<div class="history-item"><div><div class="history-title">${title}</div><div class="history-meta">${escapeHtml(date)} · ${escapeHtml(row.status || 'مكتمل')}</div></div><div class="history-amount ${credit ? 'credit' : 'debit'}">${money(amount)} ${escapeHtml(currency)}</div></div>`;
     }).join('');
   } catch (error) { $('history').innerHTML = '<p class="empty">' + escapeHtml(error.message) + '</p>'; }
 }
@@ -149,7 +151,7 @@ $('walletForm').addEventListener('submit', async (event) => {
   finally { button.disabled = false; }
 });
 function openAction(type, walletId) {
-  $('actionForm').reset(); message('actionMessage',''); $('actionType').value = type;
+  $('actionForm').reset(); message('actionMessage',''); actionIdempotencyKey = crypto.randomUUID(); $('actionType').value = type;
   $('actionTitle').textContent = type === 'credit' ? 'شحن رصيد تجريبي' : type === 'external' ? 'تحويل خارجي تجريبي' : 'تحويل داخلي تجريبي';
   $('destinationWrap').hidden = type !== 'transfer'; $('creditWrap').hidden = type !== 'credit';
   $('externalModeWrap').hidden = type !== 'external'; $('externalFields').hidden = type !== 'external';
@@ -175,7 +177,7 @@ $('actionForm').addEventListener('submit', async (event) => {
       const destinationCountry = $('externalCountry').value.trim();
       if (!provider || !beneficiaryName || !/^DEMO-[A-Z0-9-]{4,60}$/i.test(destinationReference)) throw new Error('أدخل الجهة والمستفيد ومرجعًا وهميًا يبدأ بـ DEMO-.');
       if (mode === 'GLOBAL' && !destinationCountry) throw new Error('أدخل دولة المستفيد للتحويل الدولي التجريبي.');
-      await api('/transfers/external', { method:'POST', headers:{'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({ fromWalletId:walletId, amountMinor:amount, currency:source.currency, destinationType:mode, provider, beneficiaryName, destinationReference, destinationCountry }) });
+      await api('/transfers/external', { method:'POST', headers:{'Idempotency-Key':actionIdempotencyKey}, body:JSON.stringify({ fromWalletId:walletId, amountMinor:amount, currency:source.currency, destinationType:mode, provider, beneficiaryName, destinationReference, destinationCountry }) });
     } else {
       const destination = $('destinationWallet').value.trim().replace(/^ID\s*:\s*/i, '').trim();
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
