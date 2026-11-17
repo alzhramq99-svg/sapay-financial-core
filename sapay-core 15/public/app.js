@@ -122,10 +122,10 @@ function renderWallets() {
     <div class="wallet-head"><span class="currency-icon">${escapeHtml(w.currency.slice(0,2))}</span><span class="wallet-currency">${escapeHtml(w.currency)} · محفظة تجريبية</span></div>
     <div class="wallet-balance">${money(w.balanceMinor)} <small>${escapeHtml(w.currency)}</small></div>
     <div class="wallet-id">ID: ${escapeHtml(w.id)}</div>
-    <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل تجريبي</button></div>
+    <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل داخلي</button><button class="outline-btn" data-external="${escapeHtml(w.id)}">تحويل خارجي تجريبي</button></div>
   </article>`).join('');
   root.querySelectorAll('[data-credit]').forEach(btn => btn.addEventListener('click', () => openAction('credit', btn.dataset.credit)));
-  root.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => openAction('transfer', btn.dataset.send)));
+  root.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => openAction('transfer', btn.dataset.send)));\n  root.querySelectorAll('[data-external]').forEach(btn => btn.addEventListener('click', () => openAction('external', btn.dataset.external)));
 }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 async function loadHistory() {
@@ -151,7 +151,7 @@ function openAction(type, walletId) {
   $('actionForm').reset(); message('actionMessage',''); $('actionType').value = type;
   $('actionTitle').textContent = type === 'credit' ? 'شحن رصيد تجريبي' : 'تحويل تجريبي بين المحافظ';
   $('destinationWrap').hidden = type === 'credit'; $('creditWrap').hidden = type !== 'credit';
-  $('actionHint').textContent = type === 'credit' ? 'هذا الشحن افتراضي لأغراض الاختبار فقط، ولا يمثل إيداعًا ماليًا.' : 'الصق معرّف محفظة المستلم كما يظهر في البطاقة، ويمكنك لصق السطر كاملًا بما فيه ID:. لا يمكن التحويل إلا إلى محفظة نشطة بنفس العملة.';
+  $('actionHint').textContent = type === 'credit' ? 'هذا الشحن افتراضي لأغراض الاختبار فقط، ولا يمثل إيداعًا ماليًا.' : type === 'external' ? 'قيد محاسبي تجريبي فقط. لن يتم إرسال الأموال أو الاتصال بأي بنك أو شركة تحويل.' : 'اختر محفظة مستلم نشطة بنفس العملة. هذا تحويل داخلي بين محافظ SApay.';
   $('sourceWallet').innerHTML = state.wallets.map(w => `<option value="${escapeHtml(w.id)}" ${w.id === walletId ? 'selected' : ''}>${escapeHtml(w.currency)} · ${money(w.balanceMinor)}</option>`).join('');
   $('actionDialog').showModal();
 }
@@ -163,15 +163,25 @@ $('actionForm').addEventListener('submit', async (event) => {
     if (type === 'credit') {
       const reference = $('creditReference').value.trim() || ('demo-' + crypto.randomUUID());
       await api('/demo/wallets/' + encodeURIComponent(walletId) + '/credit', { method:'POST', body:JSON.stringify({ amountMinor:amount, reference }) });
+    } else if (type === 'external') {
+      const source = state.wallets.find(w => w.id === walletId);
+      const mode = $('externalMode').value;
+      const provider = $('externalProvider').value.trim();
+      const beneficiaryName = $('externalBeneficiary').value.trim();
+      const destinationReference = $('externalReference').value.trim();
+      const destinationCountry = $('externalCountry').value.trim();
+      if (!provider || !beneficiaryName || !/^DEMO-[A-Z0-9-]{4,60}$/i.test(destinationReference)) throw new Error('أدخل الجهة والمستفيد ومرجعًا وهميًا يبدأ بـ DEMO-.');
+      if (mode === 'GLOBAL' && !destinationCountry) throw new Error('أدخل دولة المستفيد للتحويل الدولي التجريبي.');
+      await api('/transfers/external', { method:'POST', headers:{'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({ fromWalletId:walletId, amountMinor:amount, currency:source.currency, destinationType:mode, provider, beneficiaryName, destinationReference, destinationCountry }) });
     } else {
-      const destination = $('destinationWallet').value.trim().replace(/^ID\s*:\s*/i, '').trim();
+      const destination = $('destinationWallet').value.trim().replace(/^ID\\s*:\\s*/i, '').trim();
       const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       if (!destination) throw new Error('أدخل معرّف محفظة المستلم.');
       if (!uuidPattern.test(destination)) throw new Error('معرّف المحفظة غير صحيح. الصق المعرّف كاملًا أو السطر الذي يبدأ بـ ID:.');
       const source = state.wallets.find(w => w.id === walletId);
       await api('/transfers', { method:'POST', headers:{'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({ fromWalletId:walletId, toWalletId:destination, amountMinor:amount, currency:source.currency }) });
     }
-    $('actionDialog').close(); toast('تم تسجيل العملية في قاعدة البيانات التجريبية.'); await refreshData();
+    $('actionDialog').close(); toast(type === 'external' ? 'تم تسجيل التحويل الخارجي التجريبي دون إرساله.' : 'تم تسجيل العملية في قاعدة البيانات التجريبية.'); await refreshData();
   } catch (error) { message('actionMessage', error.message); }
   finally { button.disabled = false; }
 });
@@ -312,4 +322,4 @@ if (state.token) {
     openAction('transfer',state.wallets[0].id);
   });
   $('accountLogout').addEventListener('click',()=>logout());
-})();
+$('externalMode').addEventListener('change', () => { $('externalCountryWrap').hidden = $('externalMode').value !== 'GLOBAL'; });\n})();
