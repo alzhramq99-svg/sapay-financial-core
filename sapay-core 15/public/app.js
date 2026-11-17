@@ -225,7 +225,7 @@ if (state.token) {
   const institutionSearch=pages.services.querySelector('#institutionSearch');
   renderInstitutions(publicInstitutions,publicRoot);renderInstitutions(privateInstitutions,privateRoot);
   institutionSearch.addEventListener('input',()=>{const q=institutionSearch.value.trim();renderInstitutions(publicInstitutions.filter(n=>n.includes(q)),publicRoot);renderInstitutions(privateInstitutions.filter(n=>n.includes(q)),privateRoot);});
-  const sudaneseBanks=['بنك الخرطوم','بنك فيصل الإسلامي','بنك أم درمان الوطني','بنك النيلين','البنك الزراعي السوداني','بنك التنمية الصناعية','بنك تنمية الصادرات','بنك الادخار والتنمية الاجتماعية','بنك الثروة الحيوانية','بنك العمال الوطني','البنك الإسلامي السوداني','البنك السوداني الفرنسي','البنك السوداني المصري','البنك العربي السوداني','البنك السعودي السوداني','بنك قطر الوطني – فرع السودان','بنك قطر الإسلامي – فرع السودان','بنك السلام','بنك البركة السوداني','بنك الخليج','بنك الجزيرة السوداني الأردني','بنك بيبلوس أفريقيا','بنك النيل الأزرق المشرق','بنك النيل للتجارة والتنمية','البنك التجاري للمزارعين','بنك الاستثمار المالي','بنك الأسرة','بنك العاصمة المتحد','بنك آيفوري','بنك البلد','بنك أفريقيا والخليج','بنك التضامن الإسلامي','البنك الوطني السوداني','البنك الأهلي المصري – فرع الخرطوم','بنك الساحل والصحراء','مصرف الادخار والاستثمار العقاري','مصرف أبوظبي الإسلامي – السودان','بنك زراعات كاتيليم'];
+  const sudaneseBanks=['بنك الخرطوم','بنك فيصل الإسلامي','بنك أم درمان الوطني','بنك النيلين','البنك الزراعي السوداني','بنك التنمية الصناعية','بنك تنمية الصادرات','بنك الادخار والتنمية الاجتماعية','بنك الثروة الحيوانية','بنك العمال الوطني','البنك الإسلامي السوداني','البنك السوداني الفرنسي','البنك السوداني المصري','البنك العربي السوداني','البنك السعودي السوداني','بنك قطر الوطني – فرع السودان','بنك قطر الإسلامي – فرع السودان','بنك السلام','بنك البركة السوداني','بنك الخليج','بنك الجزيرة السوداني الأردني','بنك بيبلوس أفريقيا','بنك النيل الأزرق المشرق','بنك النيل للتجارة والتنمية','البنك التجاري للمزارعين','بنك الاستثمار المالي','بنك الأسرة','بنك العاصمة المتحد','بنك آيفوري','بنك البلد','بنك أفريقيا والخليج','بنك التضامن الإسلامي','البنك الوطني السوداني','البنك الأهلي المصري – فرع الخرطوم','بنك الساحل والصحراء','بنك العقارات التجارية','مصرف أبوظبي الإسلامي – السودان','بنك أبوظبي الوطني – السودان','بنك زراعات كاتيليم'];
   const globalDestinations=['الإمارات العربية المتحدة','المملكة العربية السعودية','مصر','قطر','الكويت','البحرين','سلطنة عُمان','تركيا','المملكة المتحدة','الولايات المتحدة الأمريكية','دول الاتحاد الأوروبي','الأردن','لبنان'];
   const renderDirectory=(items,root,attribute)=>{root.innerHTML=items.map(name=>'<div class="directory-item"><b>'+escapeHtml(name)+'</b><em>قيد التخطيط · غير متاح للتحويل</em></div>').join('');};
   const bankRoot=pages.services.querySelector('#sudanBanks');
@@ -264,6 +264,7 @@ if (state.token) {
   };
   nav.addEventListener('click',e=>{const button=e.target.closest('[data-page]');if(button)go(button.dataset.page);});
   shortcuts.addEventListener('click',e=>{const button=e.target.closest('[data-go]');if(button)go(button.dataset.go);});
+  pages.transfers.addEventListener('click',e=>{const button=e.target.closest('[data-go]');if(button)go(button.dataset.go);});
   $('startTransferBtn').addEventListener('click',()=>{
     if(!state.wallets.length){toast('أنشئ محفظة أولًا للبدء.');go('wallets');return;}
     openAction('transfer',state.wallets[0].id);
