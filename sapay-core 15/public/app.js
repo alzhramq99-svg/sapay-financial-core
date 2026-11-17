@@ -46,7 +46,7 @@ $('faceIdLogin').addEventListener('click', async () => {
   try {
     if (!window.SApayBiometric?.isNative) throw new Error('Face ID متاح داخل تطبيق iOS فقط.');
     const credentials = await window.SApayBiometric.getCredentials(biometricServer);
-    const result = await api('/auth/login', { method: 'POST', body: JSON.stringify(credentials) });
+    const result = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email: credentials.username, password: credentials.password }) });
     state.token = result.accessToken; state.user = result.user; sessionStorage.setItem('sapay_access_token', state.token);
     if (state.authMode === 'login') await configureFaceIdAfterLogin($('email').value.trim(), $('password').value);
     await showDashboard();
