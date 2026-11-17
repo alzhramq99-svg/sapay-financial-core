@@ -253,6 +253,9 @@ export class PostgresLedgerService {
     if (input.destinationType === 'GLOBAL' && !destinationCountry) {
       throw new BadRequestException('destinationCountry is required for global demo transfers');
     }
+    if (destinationCountry.length > 80) {
+      throw new BadRequestException('destinationCountry must be at most 80 characters');
+    }
     const key = typeof input.idempotencyKey === 'string' ? input.idempotencyKey.trim() : '';
     if (!key || key.length > 128) throw new BadRequestException('A valid Idempotency-Key header is required');
     const fingerprint = createHash('sha256').update([
