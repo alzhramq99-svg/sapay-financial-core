@@ -150,8 +150,10 @@ $('walletForm').addEventListener('submit', async (event) => {
 });
 function openAction(type, walletId) {
   $('actionForm').reset(); message('actionMessage',''); $('actionType').value = type;
-  $('actionTitle').textContent = type === 'credit' ? 'شحن رصيد تجريبي' : 'تحويل تجريبي بين المحافظ';
-  $('destinationWrap').hidden = type === 'credit'; $('creditWrap').hidden = type !== 'credit';
+  $('actionTitle').textContent = type === 'credit' ? 'شحن رصيد تجريبي' : type === 'external' ? 'تحويل خارجي تجريبي' : 'تحويل داخلي تجريبي';
+  $('destinationWrap').hidden = type !== 'transfer'; $('creditWrap').hidden = type !== 'credit';
+  $('externalModeWrap').hidden = type !== 'external'; $('externalFields').hidden = type !== 'external';
+  $('externalCountryWrap').hidden = $('externalMode').value !== 'GLOBAL';
   $('actionHint').textContent = type === 'credit' ? 'هذا الشحن افتراضي لأغراض الاختبار فقط، ولا يمثل إيداعًا ماليًا.' : type === 'external' ? 'قيد محاسبي تجريبي فقط. لن يتم إرسال الأموال أو الاتصال بأي بنك أو شركة تحويل.' : 'اختر محفظة مستلم نشطة بنفس العملة. هذا تحويل داخلي بين محافظ SApay.';
   $('sourceWallet').innerHTML = state.wallets.map(w => `<option value="${escapeHtml(w.id)}" ${w.id === walletId ? 'selected' : ''}>${escapeHtml(w.currency)} · ${money(w.balanceMinor)}</option>`).join('');
   $('actionDialog').showModal();
