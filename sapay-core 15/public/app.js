@@ -49,7 +49,10 @@ $('faceIdLogin').addEventListener('click', async () => {
     const credentials = await window.SApayBiometric.getCredentials(biometricServer);
     const result = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email: credentials.username, password: credentials.password }) });
     state.token = result.accessToken; state.user = result.user; sessionStorage.setItem('sapay_access_token', state.token);
-    if (state.authMode === 'login') await configureFaceIdAfterLogin($('email').value.trim(), $('password').value);
+    if (state.authMode === 'login') {
+      await configureFaceIdAfterLogin($('email').value.trim(), $('password').value);
+      if (window.SApayBiometric?.isNative && await window.SApayBiometric.hasCredentials(biometricServer)) $('faceIdLogin').hidden = false;
+    }
     await showDashboard();
   } catch (error) {
     message('biometricMessage', error.message || 'تعذر تسجيل الدخول باستخدام Face ID.');
