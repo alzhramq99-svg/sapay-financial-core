@@ -24,14 +24,13 @@ services:
   api:
     build: .
     container_name: sapay-api
-    ports:
-      - "127.0.0.1:3000:3000"
+    network_mode: host
     restart: unless-stopped
     environment:
       APP_HOST: 0.0.0.0
       AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:?AUTH_TOKEN_SECRET is required}
       PORT: "3000"
-      PGHOST: postgres
+      PGHOST: 127.0.0.1
       PGPORT: "5432"
       PGDATABASE: sapay_demo
       PGUSER: sapay_app

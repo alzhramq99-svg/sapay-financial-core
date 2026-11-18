@@ -162,6 +162,38 @@ describe('PostgreSQL API integration (isolated test database only)', () => {
     });
   }
 
+  it('accepts a copied wallet ID with its visible ID: label and rejects malformed UUIDs cleanly', async () => {
+    const runId = randomUUID();
+    const fromWalletId = await createWallet(`integration-id-prefix-from-${runId}`);
+    const toWalletId = await createWallet(`integration-id-prefix-to-${runId}`);
+
+    const credit = await requestJson(`/demo/wallets/${fromWalletId}/credit`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ amountMinor: '1000', reference: `integration-id-prefix-credit-${runId}` }),
+    });
+    expect(credit.response.status).toBe(201);
+
+    const prefixedTransfer = await submitTransfer({
+      fromWalletId: `ID: ${fromWalletId}`,
+      toWalletId: `ID: ${toWalletId}`,
+      amountMinor: '250',
+      idempotencyKey: `integration-id-prefix-transfer-${runId}`,
+    });
+    expect(prefixedTransfer.response.status).toBe(201);
+    await expect(getBalance(fromWalletId)).resolves.toBe('750');
+    await expect(getBalance(toWalletId)).resolves.toBe('250');
+
+    const malformed = await submitTransfer({
+      fromWalletId,
+      toWalletId: 'ID: not-a-uuid',
+      amountMinor: '1',
+      idempotencyKey: `integration-invalid-uuid-${runId}`,
+    });
+    expect(malformed.response.status).toBe(400);
+    expect(String(malformed.body.message)).toContain('toWalletId must be a valid wallet UUID');
+  });
+
   it('creates PostgreSQL wallets and transfers through the API with persisted balances', async () => {
     const runId = randomUUID();
     const fromWalletId = await createWallet(`integration-from-${runId}`);

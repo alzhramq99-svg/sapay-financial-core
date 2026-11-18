@@ -12,6 +12,17 @@ import { DatabaseService } from './database.service';
 export class PostgresLedgerService {
   constructor(private readonly db: DatabaseService) {}
 
+  private normalizeWalletId(value: unknown, fieldName: string): string {
+    const normalized = typeof value === 'string'
+      ? value.trim().replace(/^ID\s*:\s*/i, '').trim()
+      : '';
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidPattern.test(normalized)) {
+      throw new BadRequestException(`${fieldName} must be a valid wallet UUID`);
+    }
+    return normalized;
+  }
+
   async createWallet(userId: string, currency: string) {
     const code = typeof currency === 'string' ? currency.trim().toUpperCase() : '';
     if (!/^[A-Z]{3}$/.test(code)) throw new BadRequestException('currency must be a 3-letter code, e.g. SDG');
@@ -37,6 +48,7 @@ export class PostgresLedgerService {
   }
 
   async getWallet(walletId: string, userId: string) {
+    walletId = this.normalizeWalletId(walletId, 'walletId');
     const result = await this.db.query(
       `SELECT w.id, u.external_ref AS "ownerId", w.currency, w.status,
               w.created_at AS "createdAt",
@@ -72,6 +84,7 @@ export class PostgresLedgerService {
   }
 
   async demoCredit(walletId: string, userId: string, amountInput: string, referenceInput: string) {
+    walletId = this.normalizeWalletId(walletId, 'walletId');
     const amount = this.parseAmount(amountInput);
     const reference = typeof referenceInput === 'string' ? referenceInput.trim() : '';
     if (!reference) throw new BadRequestException('reference is required');
@@ -122,6 +135,8 @@ export class PostgresLedgerService {
     fromWalletId: string; toWalletId: string; amountMinor: string;
     currency: string; idempotencyKey: string; userId: string;
   }) {
+    const fromWalletId = this.normalizeWalletId(input.fromWalletId, 'fromWalletId');
+    const toWalletId = this.normalizeWalletId(input.toWalletId, 'toWalletId');
     const key = typeof input.idempotencyKey === 'string' ? input.idempotencyKey.trim() : '';
     if (!key) throw new BadRequestException('Idempotency-Key header is required');
     if (key.length > 128) throw new BadRequestException('Idempotency-Key must be at most 128 characters');
@@ -129,7 +144,7 @@ export class PostgresLedgerService {
     const currency = typeof input.currency === 'string' ? input.currency.trim().toUpperCase() : '';
     if (!/^[A-Z]{3}$/.test(currency)) throw new BadRequestException('currency must be a 3-letter code');
     const fingerprint = createHash('sha256').update([
-      input.userId, input.fromWalletId, input.toWalletId, amount, currency,
+      input.userId, fromWalletId, toWalletId, amount, currency,
     ].join('|')).digest('hex');
 
     return this.db.withTransaction(async (client) => {
@@ -146,11 +161,11 @@ export class PostgresLedgerService {
         return { ...prior.rows[0].response_body, idempotentReplay: true };
       }
 
-      if (input.fromWalletId === input.toWalletId) {
+      if (fromWalletId === toWalletId) {
         throw new BadRequestException('Source and destination wallets must differ');
       }
       // Stable lock order reduces deadlock risk.
-      const ids = [input.fromWalletId, input.toWalletId].sort();
+      const ids = [fromWalletId, toWalletId].sort();
       const walletRows = await client.query(
         `SELECT w.id, w.user_id, w.currency, w.status, a.id AS account_id
          FROM wallets w
@@ -161,8 +176,8 @@ export class PostgresLedgerService {
       );
       if (walletRows.rowCount !== 2) throw new NotFoundException('Source or destination wallet not found');
       const byId = new Map(walletRows.rows.map((w) => [w.id, w]));
-      const from = byId.get(input.fromWalletId)!;
-      const to = byId.get(input.toWalletId)!;
+      const from = byId.get(fromWalletId)!;
+      const to = byId.get(toWalletId)!;
       if (from.user_id !== input.userId) throw new NotFoundException('Source wallet not found');
       if (from.status !== 'ACTIVE' || to.status !== 'ACTIVE') {
         throw new UnprocessableEntityException('Both wallets must be active');
@@ -207,6 +222,107 @@ export class PostgresLedgerService {
       await client.query(
         `INSERT INTO idempotency_keys (idempotency_key, request_hash, response_status, response_body)
          VALUES ($1, $2, 201, $3::jsonb)`,
+        [key, fingerprint, JSON.stringify(response)],
+      );
+      return response;
+    });
+  }
+
+  async externalTransfer(input: {
+    fromWalletId: string; amountMinor: string; currency: string;
+    destinationType: 'SUDAN_BANK' | 'GLOBAL'; provider: string;
+    beneficiaryName: string; destinationReference: string; destinationCountry?: string;
+    idempotencyKey: string; userId: string;
+  }) {
+    const walletId = this.normalizeWalletId(input.fromWalletId, 'fromWalletId');
+    const amount = this.parseAmount(input.amountMinor);
+    const currency = typeof input.currency === 'string' ? input.currency.trim().toUpperCase() : '';
+    if (!/^[A-Z]{3}$/.test(currency)) throw new BadRequestException('currency must be a 3-letter code');
+    if (!['SUDAN_BANK', 'GLOBAL'].includes(input.destinationType)) throw new BadRequestException('Unsupported destination type');
+    const provider = typeof input.provider === 'string' ? input.provider.trim() : '';
+    const beneficiaryName = typeof input.beneficiaryName === 'string' ? input.beneficiaryName.trim() : '';
+    const destinationReference = typeof input.destinationReference === 'string' ? input.destinationReference.trim() : '';
+    const destinationCountry = typeof input.destinationCountry === 'string' ? input.destinationCountry.trim() : '';
+    if (!provider || provider.length > 100 || !beneficiaryName || beneficiaryName.length > 120) {
+      throw new BadRequestException('Provider and beneficiary name are required');
+    }
+    // Demo-only references prevent users from entering real bank account or card details.
+    if (!/^DEMO-[A-Z0-9-]{4,60}$/i.test(destinationReference)) {
+      throw new BadRequestException('Use a fictional DEMO- reference only; real account details are not accepted');
+    }
+    if (input.destinationType === 'GLOBAL' && !destinationCountry) {
+      throw new BadRequestException('destinationCountry is required for global demo transfers');
+    }
+    if (destinationCountry.length > 80) {
+      throw new BadRequestException('destinationCountry must be at most 80 characters');
+    }
+    const key = typeof input.idempotencyKey === 'string' ? input.idempotencyKey.trim() : '';
+    if (!key || key.length > 128) throw new BadRequestException('A valid Idempotency-Key header is required');
+    const fingerprint = createHash('sha256').update([
+      input.userId, walletId, amount, currency, input.destinationType, provider,
+      beneficiaryName, destinationReference, destinationCountry,
+    ].join('|')).digest('hex');
+
+    return this.db.withTransaction(async (client) => {
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [key]);
+      const prior = await client.query(
+        'SELECT request_hash, response_body FROM idempotency_keys WHERE idempotency_key = $1', [key],
+      );
+      if (prior.rowCount) {
+        if (prior.rows[0].request_hash !== fingerprint) throw new ConflictException('Idempotency-Key was already used for different details');
+        return { ...prior.rows[0].response_body, idempotentReplay: true };
+      }
+      const walletResult = await client.query(
+        `SELECT w.id, w.user_id, w.currency, w.status, a.id AS account_id
+         FROM wallets w JOIN ledger_accounts a ON a.wallet_id = w.id AND a.account_type = 'WALLET'
+         WHERE w.id = $1 AND w.user_id = $2 FOR UPDATE OF w`,
+        [walletId, input.userId],
+      );
+      if (!walletResult.rowCount) throw new NotFoundException('Source wallet not found');
+      const wallet = walletResult.rows[0];
+      if (wallet.status !== 'ACTIVE') throw new UnprocessableEntityException('Wallet is not active');
+      if (wallet.currency !== currency) throw new UnprocessableEntityException('Currency mismatch; FX is not supported');
+      const balanceResult = await client.query(
+        `SELECT COALESCE(SUM(CASE WHEN side = 'DEBIT' THEN amount_minor ELSE -amount_minor END), 0)::text AS balance
+         FROM ledger_postings WHERE account_id = $1`, [wallet.account_id],
+      );
+      if (BigInt(balanceResult.rows[0].balance) < BigInt(amount)) throw new UnprocessableEntityException('Insufficient balance');
+      const clearing = await this.ensureSystemAccount(client, `demo-external-clearing:${input.destinationType}:${currency}`, 'CLEARING', currency);
+      const journalId = randomUUID();
+      const transferId = randomUUID();
+      const metadata = {
+        walletId, destinationType: input.destinationType, provider, beneficiaryName,
+        destinationReference, destinationCountry, environment: 'demo-only',
+        execution: 'SIMULATED_NOT_SENT',
+      };
+      await client.query(
+        `INSERT INTO journal_entries (id, entry_type, reference, description, metadata)
+         VALUES ($1, 'EXTERNAL_TRANSFER', $2, $3, $4::jsonb)`,
+        [journalId, key, input.destinationType === 'GLOBAL' ? 'Simulated international transfer; not sent' : 'Simulated Sudan bank transfer; not sent', JSON.stringify(metadata)],
+      );
+      await client.query(
+        `INSERT INTO ledger_postings (journal_entry_id, account_id, side, amount_minor, currency)
+         VALUES ($1, $2, 'CREDIT', $3, $4), ($1, $5, 'DEBIT', $3, $4)`,
+        [journalId, wallet.account_id, amount, currency, clearing.id],
+      );
+      await client.query(
+        `INSERT INTO external_transfers
+          (id, from_wallet_id, destination_type, provider, beneficiary_name, destination_reference,
+           destination_country, amount_minor, currency, status, journal_entry_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'SIMULATED',$10)`,
+        [transferId, wallet.id, input.destinationType, provider, beneficiaryName, destinationReference,
+         destinationCountry || null, amount, currency, journalId],
+      );
+      const response = {
+        transferId, fromWalletId: wallet.id, amountMinor: amount, currency,
+        destinationType: input.destinationType, provider, beneficiaryName,
+        destinationReference, destinationCountry: destinationCountry || null,
+        status: 'SIMULATED', execution: 'NOT_SENT', journalEntryId: journalId,
+        idempotentReplay: false,
+      };
+      await client.query(
+        `INSERT INTO idempotency_keys (idempotency_key, request_hash, response_status, response_body)
+         VALUES ($1,$2,201,$3::jsonb)`,
         [key, fingerprint, JSON.stringify(response)],
       );
       return response;

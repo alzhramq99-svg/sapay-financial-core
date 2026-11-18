@@ -1,4 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit, ServiceUnavailableException } from '@nestjs/common';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 
 const STARTUP_CONNECTION_ATTEMPTS = 5;
@@ -11,8 +13,9 @@ function getDatabaseErrorCode(error: unknown): string | undefined {
 }
 
 /**
- * PostgreSQL connection pool. This is the connection layer only.
- * The existing LedgerService remains in-memory until its repository is migrated.
+ * PostgreSQL connection pool and transaction boundary for the demo API.
+ * Current wallet and transfer controllers use PostgresLedgerService, which
+ * persists simulated ledger activity through this service. No real funds move.
  */
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
@@ -20,11 +23,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pool?: Pool;
 
   async onModuleInit(): Promise<void> {
-    const rawConnectionString = process.env.DATABASE_URL;
-    const connectionString = rawConnectionString?.trim();
-    if (rawConnectionString !== undefined && !connectionString) {
-      throw new Error('DATABASE_URL must not be empty.');
-    }
+    const connectionString = process.env.DATABASE_URL?.trim() || undefined;
     const configuredPgSettings = [
       'PGHOST',
       'PGPORT',
@@ -143,6 +142,12 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     for (let attempt = 1; attempt <= STARTUP_CONNECTION_ATTEMPTS; attempt++) {
       try {
         await this.pool.query('SELECT 1');
+        if (process.env.DB_AUTO_MIGRATE === 'true') {
+          const schemaPath = join(process.cwd(), 'database', 'init', '001_schema.sql');
+          const schemaSql = readFileSync(schemaPath, 'utf8');
+          await this.pool.query(schemaSql);
+          this.logger.log('Demo database schema migration applied.');
+        }
         this.logger.log('PostgreSQL connection established (demo environment).');
         return;
       } catch (error) {
