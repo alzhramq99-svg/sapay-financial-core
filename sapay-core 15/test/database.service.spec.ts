@@ -39,12 +39,10 @@ describe('DatabaseService startup', () => {
 
   it('retries a transient connection termination during startup', async () => {
     const query = jest.spyOn(Pool.prototype, 'query');
-    query.mockImplementationOnce(() =>
-      Promise.reject(
-        Object.assign(new Error('Connection terminated unexpectedly'), { code: 'ECONNRESET' }),
-      ),
+    query.mockRejectedValueOnce(
+      Object.assign(new Error('Connection terminated unexpectedly'), { code: 'ECONNRESET' }) as never,
     );
-    query.mockImplementationOnce(async () => ({} as never));
+    query.mockResolvedValueOnce({} as never);
 
     await expect(service.onModuleInit()).resolves.toBeUndefined();
     expect(query).toHaveBeenCalledTimes(2);
@@ -52,8 +50,8 @@ describe('DatabaseService startup', () => {
 
   it('fails immediately when PostgreSQL rejects the configured password', async () => {
     const query = jest.spyOn(Pool.prototype, 'query');
-    query.mockImplementationOnce(() =>
-      Promise.reject(Object.assign(new Error('password authentication failed'), { code: '28P01' })),
+    query.mockRejectedValueOnce(
+      Object.assign(new Error('password authentication failed'), { code: '28P01' }) as never,
     );
 
     await expect(service.onModuleInit()).rejects.toThrow('password authentication failed');
@@ -94,7 +92,7 @@ describe('DatabaseService startup', () => {
     delete process.env.PGDATABASE;
     delete process.env.PGUSER;
     const query = jest.spyOn(Pool.prototype, 'query');
-    query.mockImplementationOnce(async () => ({} as never));
+    query.mockResolvedValueOnce({} as never);
 
     await expect(service.onModuleInit()).resolves.toBeUndefined();
     expect(query).toHaveBeenCalledTimes(1);
@@ -108,7 +106,7 @@ describe('DatabaseService startup', () => {
     process.env.PGUSER = 'test_user';
     process.env.PGPASSWORD = 'test_password';
     const query = jest.spyOn(Pool.prototype, 'query');
-    query.mockImplementationOnce(async () => ({} as never));
+    query.mockResolvedValueOnce({} as never);
 
     await expect(service.onModuleInit()).resolves.toBeUndefined();
     expect(query).toHaveBeenCalledTimes(1);

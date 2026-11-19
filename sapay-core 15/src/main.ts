@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import 'reflect-metadata';
 import { json } from 'express';
-const helmet = require('helmet') as () => (req: any, res: any, next: (error?: Error) => void) => void;
+import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
