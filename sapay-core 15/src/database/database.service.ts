@@ -146,7 +146,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
           const schemaPath = join(process.cwd(), 'database', 'init', '001_schema.sql');
           const schemaSql = readFileSync(schemaPath, 'utf8');
           await this.pool.query(schemaSql);
-          this.logger.log('Demo database schema migration applied.');
+          const externalDemoMigrationPath = join(process.cwd(), 'database', 'migrations', '002_external_demo_transfers.sql');
+          const externalDemoMigrationSql = readFileSync(externalDemoMigrationPath, 'utf8');
+          await this.pool.query(externalDemoMigrationSql);
+          this.logger.log('Demo database schema and external demo transfer migration applied.');
         }
         this.logger.log('PostgreSQL connection established (demo environment).');
         return;
