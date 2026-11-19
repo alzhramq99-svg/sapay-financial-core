@@ -1,7 +1,10 @@
 import { NativeBiometric } from '@capgo/capacitor-native-biometric';
 import { Capacitor } from '@capacitor/core';
 
-const SERVER = 'com.saadaligroup.sapay';
+// Must match `biometricServer` in public/app.js, which saves and reads the
+// Keychain entry under this key; a different default made clearCredentials()
+// with no argument delete a different (empty) entry.
+const SERVER = 'sapay-financial-core';
 const native = Capacitor.isNativePlatform();
 
 async function isAvailable(): Promise<boolean> {

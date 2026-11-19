@@ -24,13 +24,17 @@ services:
   api:
     build: .
     container_name: sapay-api
-    network_mode: host
     restart: unless-stopped
+    # Bridge network (works on Linux, macOS and Windows). The API listens on
+    # all interfaces *inside* the container, but the port is published on the
+    # host's loopback only, so it is not reachable from the LAN or internet.
+    ports:
+      - "127.0.0.1:3000:3000"
     environment:
       APP_HOST: 0.0.0.0
       AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:?AUTH_TOKEN_SECRET is required}
       PORT: "3000"
-      PGHOST: 127.0.0.1
+      PGHOST: postgres
       PGPORT: "5432"
       PGDATABASE: sapay_demo
       PGUSER: sapay_app

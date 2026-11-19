@@ -23,7 +23,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pool?: Pool;
 
   async onModuleInit(): Promise<void> {
-    const connectionString = process.env.DATABASE_URL?.trim() || undefined;
+    const rawConnectionString = process.env.DATABASE_URL;
+    // A DATABASE_URL that is set but blank is a deployment mistake (for example
+    // an unfilled secret). Fail at startup instead of running with no database,
+    // where the process looks healthy and every ledger route returns 503.
+    if (rawConnectionString !== undefined && !rawConnectionString.trim()) {
+      throw new Error('DATABASE_URL must not be empty.');
+    }
+    const connectionString = rawConnectionString?.trim() || undefined;
     const configuredPgSettings = [
       'PGHOST',
       'PGPORT',

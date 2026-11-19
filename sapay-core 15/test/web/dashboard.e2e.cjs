@@ -26,7 +26,8 @@ function startServer() {
 }
 
 async function mockApi(ctx) {
-  await ctx.route('https://sapay-api.onrender.com/api/**', (route) => {
+  // Served from localhost, the app calls its own origin's /api (see apiOrigin in app.js).
+  await ctx.route('**/api/**', (route) => {
     const url = route.request().url();
     const json = (body) => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
     if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' } });

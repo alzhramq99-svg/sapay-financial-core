@@ -63,6 +63,7 @@ npm run build
 ```
 
 ## Safety and architecture notes
+- `POST /api/transfers/external` (simulated, never sent) returns 503 unless `EXTERNAL_TRANSFERS_ENABLED=true`. Enable it only after applying `database/migrations/002_external_demo_transfers.sql`; `DB_AUTO_MIGRATE` applies `database/init/001_schema.sql` only.
 - Each transfer writes equal debit and credit postings in one PostgreSQL transaction. Journal-level balance is maintained by the service write path; a deferred database constraint enforcing balance for every journal is not yet implemented.
 - Transfers reject zero/negative amounts, insufficient balance, currency mismatch, and self-transfers.
 - Database-backed idempotency keys and transaction-scoped advisory locks prevent duplicate successful transfers across API restarts and concurrent requests.

@@ -88,6 +88,20 @@ describe('DatabaseService startup', () => {
     expect(query).not.toHaveBeenCalled();
   });
 
+  it.each(['', '   '])('fails at startup when DATABASE_URL is set but blank (%j)', async (value) => {
+    process.env.DATABASE_URL = value;
+    const query = jest.spyOn(Pool.prototype, 'query');
+
+    await expect(service.onModuleInit()).rejects.toThrow('DATABASE_URL must not be empty.');
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('starts without a database when no connection settings are present at all', async () => {
+    delete process.env.DATABASE_URL;
+
+    await expect(service.onModuleInit()).resolves.toBeUndefined();
+  });
+
   it('uses a complete DATABASE_URL when PG* settings are incomplete', async () => {
     process.env.DATABASE_URL = 'postgresql://test_user:test_password@127.0.0.1:5432/test_database';
     process.env.PGHOST = '127.0.0.1';

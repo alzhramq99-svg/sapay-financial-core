@@ -9,8 +9,11 @@ const configuredApiBase = String(window.SAPAY_CONFIG?.apiBaseUrl || '').trim().r
 const externalTransfersEnabled = window.SAPAY_CONFIG?.features?.externalTransfers === true;
 // Render's free plan sleeps when idle; the first request can take close to a minute.
 const REQUEST_TIMEOUT_MS = 60_000;
+// Served from this machine (dev-server.cjs proxies /api to a local API):
+// use the same origin, since the deployed API does not accept localhost origins.
+const loopbackHost = !nativeRuntime && ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 function apiOrigin() {
-  const base = configuredApiBase || (nativeRuntime ? '' : window.location.origin);
+  const base = (loopbackHost ? '' : configuredApiBase) || (nativeRuntime ? '' : window.location.origin);
   if (!base) throw new Error('لم يتم إعداد عنوان خادم SApay لهذا الإصدار التجريبي.');
   let url;
   try { url = new URL(base); } catch { throw new Error('عنوان خادم SApay غير صالح.'); }
