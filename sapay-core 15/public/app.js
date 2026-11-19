@@ -258,7 +258,7 @@ if (state.token) {
   if(historyHeading) pages.home.append(historyHeading);
   if(history) pages.home.append(history);
   if(footer) pages.home.append(footer);
-  pages.wallets.innerHTML=intro('إدارة الحساب','محافظي','تظهر أرصدتك ومحافظك وسجل العمليات مباشرة في الصفحة الرئيسية. ارجع إلى الرئيسية لعرض البيانات وإدارتها.');
+  pages.wallets.innerHTML='<div class="page-intro"><div class="eyebrow">إدارة الحساب</div><h2>محافظي</h2><p>تظهر أرصدتك ومحافظك وسجل العمليات مباشرة في الصفحة الرئيسية. ارجع إلى الرئيسية لعرض البيانات وإدارتها.</p></div>';
   const intro=(eyebrow,title,description)=>'<div class="page-intro"><div class="eyebrow">'+eyebrow+'</div><h2>'+title+'</h2><p>'+description+'</p></div>';
   pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
     '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
