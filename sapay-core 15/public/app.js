@@ -9,8 +9,11 @@ const configuredApiBase = String(window.SAPAY_CONFIG?.apiBaseUrl || '').trim().r
 const externalTransfersEnabled = window.SAPAY_CONFIG?.features?.externalTransfers === true;
 // Render's free plan sleeps when idle; the first request can take close to a minute.
 const REQUEST_TIMEOUT_MS = 60_000;
+// Served from this machine (dev-server.cjs proxies /api to a local API):
+// use the same origin, since the deployed API does not accept localhost origins.
+const loopbackHost = !nativeRuntime && ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 function apiOrigin() {
-  const base = configuredApiBase || (nativeRuntime ? '' : window.location.origin);
+  const base = (loopbackHost ? '' : configuredApiBase) || (nativeRuntime ? '' : window.location.origin);
   if (!base) throw new Error('لم يتم إعداد عنوان خادم SApay لهذا الإصدار التجريبي.');
   let url;
   try { url = new URL(base); } catch { throw new Error('عنوان خادم SApay غير صالح.'); }
@@ -252,13 +255,13 @@ if (state.token) {
   const shortcuts=document.createElement('div');shortcuts.className='home-shortcuts';
   shortcuts.innerHTML='<button class="shortcut-card" data-go="wallets" type="button"><span>◈</span><b>إدارة المحافظ</b><small>الأرصدة والمحافظ</small></button><button class="shortcut-card" data-go="transfers" type="button"><span>⇄</span><b>تحويل تجريبي</b><small>بين محافظ SApay</small></button><button class="shortcut-card" data-go="services" type="button"><span>▦</span><b>الخدمات</b><small>الفواتير والخدمات السودانية</small></button>';
   pages.home.append(shortcuts);
-  // Keep the original live wallet and ledger panels on the dashboard; do not hide them behind secondary tabs.
-  if(walletHeading) pages.home.append(walletHeading);
-  if(wallets) pages.home.append(wallets);
-  if(historyHeading) pages.home.append(historyHeading);
-  if(history) pages.home.append(history);
   if(footer) pages.home.append(footer);
-  pages.wallets.innerHTML='<div class="page-intro"><div class="eyebrow">إدارة الحساب</div><h2>محافظي</h2><p>تظهر أرصدتك ومحافظك وسجل العمليات مباشرة في الصفحة الرئيسية. ارجع إلى الرئيسية لعرض البيانات وإدارتها.</p></div>';
+  // The live wallet list and ledger history keep their own pages, so every
+  // navigation item has content. The total balance stays on the home page.
+  if(walletHeading) pages.wallets.append(walletHeading);
+  if(wallets) pages.wallets.append(wallets);
+  if(historyHeading) pages.history.append(historyHeading);
+  if(history) pages.history.append(history);
   const intro=(eyebrow,title,description)=>'<div class="page-intro"><div class="eyebrow">'+eyebrow+'</div><h2>'+title+'</h2><p>'+description+'</p></div>';
   pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
     '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
@@ -281,8 +284,13 @@ if (state.token) {
     '<section class="panel card-roadmap"><h3>الربط بجهة إصدار مستقبلًا</h3><p>تم فصل البطاقة التجريبية عن أي معالج دفع. عند اعتماد جهة إصدار مرخصة، ستُستبدل بيانات العرض بواجهة خادم آمنة لإصدار البطاقة وإدارتها، دون تخزين رقم البطاقة الكامل أو رمز CVV في التطبيق.</p><ul><li>التحقق من هوية العميل ومتطلبات KYC/AML لدى الشريك.</li><li>إصدار البطاقة وإيقافها عبر واجهة مزود الإصدار.</li><li>عرض البيانات الحساسة عبر مكوّن آمن مستضاف من الجهة المصدرة.</li><li>ربط حدود الإنفاق والتنبيهات وسجل العمليات بعد الاعتماد.</li></ul></section>';
   const cardStateKey='sapay_demo_virtual_card_frozen_v1';
   let demoCardFrozen=localStorage.getItem(cardStateKey)==='true';
-  const cardStatus=$('demoCardStatus');
-  const freezeButton=$('toggleDemoCard');
+  // The pages are attached to the document only after every page is built
+  // (see `root.append(pages[key])` below), so document-level lookups such as
+  // $('toggleDemoCard') return null here. Query the detached page instead.
+  const cardStatus=pages.cards.querySelector('#demoCardStatus');
+  const freezeButton=pages.cards.querySelector('#toggleDemoCard');
+  const revealButton=pages.cards.querySelector('#revealDemoCard');
+  const cardDetails=pages.cards.querySelector('#demoCardDetails');
   const renderDemoCardState=()=>{
     if(!cardStatus||!freezeButton)return;
     cardStatus.textContent=demoCardFrozen?'البطاقة مجمّدة تجريبيًا':'البطاقة نشطة تجريبيًا';
@@ -295,12 +303,11 @@ if (state.token) {
     renderDemoCardState();
     toast(demoCardFrozen?'تم تجميد البطاقة في وضع العرض.':'تم إلغاء التجميد في وضع العرض.');
   });
-  $('revealDemoCard').addEventListener('click',()=>{
-    const details=$('demoCardDetails');
-    const opening=details.hidden;
-    details.hidden=!opening;
-    $('revealDemoCard').setAttribute('aria-expanded',String(opening));
-    $('revealDemoCard').textContent=opening?'إخفاء بيانات الاختبار':'عرض بيانات الاختبار';
+  revealButton.addEventListener('click',()=>{
+    const opening=cardDetails.hidden;
+    cardDetails.hidden=!opening;
+    revealButton.setAttribute('aria-expanded',String(opening));
+    revealButton.textContent=opening?'إخفاء بيانات الاختبار':'عرض بيانات الاختبار';
   });
   renderDemoCardState();
   pages.services.innerHTML=intro('منظومة خدمات السودان','الخدمات والمدفوعات','استعرض الجهات السودانية والخدمات المستهدفة. جميع خيارات السداد والربط معروضة للتعريف والتخطيط فقط، وليست متاحة للدفع الحقيقي.')+

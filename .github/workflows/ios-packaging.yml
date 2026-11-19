@@ -31,10 +31,19 @@ jobs:
       - name: Install Capacitor dependencies
         run: npm install
       - name: Generate iOS project
+        # Same sequence as ios-testflight.yml: cap:sync builds the biometric
+        # bridge and adds NSFaceIDUsageDescription, so the validated artifact
+        # matches what ships to TestFlight.
         run: |
           npm run copy:web
           npx cap add ios
-          npx cap sync ios
+          npm run cap:sync
+      - name: Verify Face ID bridge and usage description
+        run: |
+          test -s ../public/biometric-bridge.js
+          test -s ios/App/App/public/biometric-bridge.js
+          grep -q 'SApayBiometric' ios/App/App/public/biometric-bridge.js
+          /usr/libexec/PlistBuddy -c 'Print :NSFaceIDUsageDescription' ios/App/App/Info.plist
       - name: Build iOS Simulator app
         run: |
           xcodebuild -workspace ios/App/App.xcworkspace \

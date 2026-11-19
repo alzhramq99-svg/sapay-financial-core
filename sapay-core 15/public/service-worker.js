@@ -1,10 +1,10 @@
 'use strict';
 // Bump CACHE_VERSION on every change to this file. Changing the file is what
 // makes Safari install the new worker; the version names its cache.
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v9';
 const CACHE_NAME = 'sapay-iphone-shell-' + CACHE_VERSION;
 const APP_SHELL = ['/', '/index.html', '/styles.css', '/design-tokens.css', '/app.js', '/runtime-config.js', '/manifest.webmanifest',
-  '/icons/sapay-192.svg', '/icons/sapay-512.svg', '/icons/sapay-180.png'];
+  '/icons/sapay-192.svg', '/icons/sapay-512.svg', '/icons/sapay-180.png', '/privacy.html', '/support.html'];
 // On a weak connection, wait this long for the network before using the cache.
 const NETWORK_TIMEOUT_MS = 5000;
 const OFFLINE_MESSAGE = 'يتعذر الاتصال بخادم SApay. تحقق من الإنترنت ثم أعد المحاولة.';
@@ -49,7 +49,11 @@ self.addEventListener('fetch', (event) => {
   // API calls are never cached: balances and history must always be live.
   if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirst(request, '/index.html'));
+    // Each page is cached under its own path. Caching every navigation under
+    // /index.html let a visit to /privacy.html overwrite the app shell, so the
+    // installed app later opened offline on the privacy page.
+    const page = url.pathname === '/' ? '/index.html' : url.pathname;
+    if (APP_SHELL.includes(page)) event.respondWith(networkFirst(request, page));
   } else if (APP_SHELL.includes(url.pathname)) {
     event.respondWith(networkFirst(request, url.pathname));
   }

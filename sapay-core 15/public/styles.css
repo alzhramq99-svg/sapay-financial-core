@@ -95,3 +95,13 @@ input::placeholder{color:#777166}input:focus,select:focus{border-color:#d6b66b;b
 .card-demo-notice{max-width:560px;margin:14px auto}
 .card-roadmap{max-width:560px;margin:18px auto;padding:20px}.card-roadmap h3{margin:0 0 8px;color:#f4eddf;font-size:16px}.card-roadmap p,.card-roadmap li{color:#aaa294;font-size:12px;line-height:1.9}.card-roadmap ul{padding-inline-start:20px;margin-bottom:0}
 @media(max-width:520px){.virtual-card{min-height:270px;padding:21px 19px;border-radius:20px}.virtual-card-brand{margin-top:18px}.virtual-card-number{margin:22px 0;font-size:18px;letter-spacing:1px}.virtual-card-brand strong{font-size:25px}.card-actions{flex-direction:column}.demo-card-details{grid-template-columns:1fr}.virtual-card-bottom b{font-size:11px}}
+
+/* Navigation: all nine sections visible without a hidden horizontal scroll.
+   The scrolling row showed only five items on iPhone and hid its scrollbar,
+   so the other four looked missing. Wrap instead: one row when it fits,
+   five columns (5 + 4) on phones. */
+.app-nav{flex-wrap:wrap;overflow-x:visible}
+@media(max-width:760px){.app-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}.app-nav .nav-item{min-width:0;padding:5px 2px}}
+/* Phone landscape: the screen is short and the nav is sticky, so keep it to a
+   single row; nine columns fit in ~750px. */
+@media(max-width:760px) and (orientation:landscape){.app-nav{grid-template-columns:repeat(9,minmax(0,1fr))}}

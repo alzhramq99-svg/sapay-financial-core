@@ -16,15 +16,18 @@ const server = http.createServer((req, res) => {
   if (!f.startsWith(root) || !fs.existsSync(f)) { res.writeHead(404, {'content-type':'text/html'}); return res.end('<h1>404</h1>'); }
   res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream', 'cache-control': 'no-cache' }); fs.createReadStream(f).pipe(res);
 }).listen(4173);
-const API = 'https://sapay-api.onrender.com/api';
+// Served from localhost, the app calls its own origin's /api (see apiOrigin in app.js).
+const API = 'http://localhost:4173/api';
+// Read the cache name from the worker itself so a version bump cannot leave this test stale.
+const CACHE_NAME = 'sapay-iphone-shell-' + fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8').match(/CACHE_VERSION = '([^']+)'/)[1];
 const results = []; const check = (name, ok, extra='') => { results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? ' — ' + extra : ''}`); };
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'allow' });
-  let apiMode = 'ok'; const calls = [];
+  let apiMode = 'ok'; const calls = []; const apiOrigins = new Set();
   const wallet = { id: '11111111-1111-4111-8111-111111111111', currency: 'SDG', balanceMinor: '5000' };
   await ctx.route(API + '/**', async (route) => {
-    const u = new URL(route.request().url()); calls.push(route.request().method() + ' ' + u.pathname);
+    const u = new URL(route.request().url()); calls.push(route.request().method() + ' ' + u.pathname); apiOrigins.add(u.origin);
     const json = (status, body) => route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
     if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'GET,POST' } });
     if (apiMode === 'down') return route.abort('internetdisconnected');
@@ -42,7 +45,7 @@ const results = []; const check = (name, ok, extra='') => { results.push(`${ok ?
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload(); await page.waitForTimeout(500);
   check('service worker controls page', await page.evaluate(() => Boolean(navigator.serviceWorker.controller)));
-  const cached = await page.evaluate(async () => (await (await caches.open('sapay-iphone-shell-v5')).keys()).map(r => new URL(r.url).pathname));
+  const cached = await page.evaluate(async (name) => (await (await caches.open(name)).keys()).map(r => new URL(r.url).pathname), CACHE_NAME);
   check('shell cached incl. runtime-config and PNG icon', ['/runtime-config.js','/icons/sapay-180.png','/design-tokens.css','/app.js'].every(p => cached.includes(p)), cached.join(','));
   check('health warm-up request sent on open', calls.includes('GET /api/health'));
   check('Face ID button hidden on web', await page.locator('#faceIdLogin').isHidden());
@@ -72,11 +75,25 @@ const results = []; const check = (name, ok, extra='') => { results.push(`${ok ?
   await page.fill('#email', 'demo@example.test'); await page.fill('#password', 'demo-password-2026'); await page.click('#authSubmit'); await page.waitForTimeout(300);
   msg = await page.textContent('#authMessage'); check('offline login shows no-internet message', msg.includes('لا يوجد اتصال'), msg);
   await ctx.setOffline(false);
+  // privacy/support pages must not replace the cached app shell (#26 review)
+  await page.goto('http://localhost:4173/privacy.html'); await page.waitForTimeout(300);
+  await page.goto('http://localhost:4173/support.html'); await page.waitForTimeout(300);
+  await ctx.setOffline(true);
+  await page.goto('http://localhost:4173/'); await page.waitForTimeout(300);
+  check('offline launch after visiting privacy/support still opens the app shell', await page.locator('#authForm').isVisible());
+  await page.goto('http://localhost:4173/privacy.html'); await page.waitForTimeout(300);
+  check('privacy page available offline', (await page.title()).includes('الخصوصية'), await page.title());
+  await ctx.setOffline(false);
+  await page.goto('http://localhost:4173/'); await page.waitForTimeout(300);
+  check('API calls stay on the same origin when served from localhost', calls.length > 0 && apiOrigins.size === 1 && apiOrigins.has('http://localhost:4173'), [...apiOrigins].join(','));
   // update: change app.js on server, a reload must serve the new file, not the cached one
   fs.appendFileSync(path.join(root, 'app.js'), '\nwindow.__SAPAY_BUILD = "new";\n');
   await page.reload(); await page.waitForTimeout(500);
   check('updated app.js served after deploy (network-first)', (await page.evaluate(() => window.__SAPAY_BUILD)) === 'new');
   check('no uncaught page errors', errors.length === 0, errors.join(' | '));
   console.log(results.join('\n'));
+  const failed = results.filter(r => r.startsWith('FAIL')).length;
+  console.log(`\n${results.length - failed}/${results.length} passed`);
+  process.exitCode = failed ? 1 : 0;
   await browser.close(); server.close();
 })().catch(e => { console.error(e); process.exit(1); });

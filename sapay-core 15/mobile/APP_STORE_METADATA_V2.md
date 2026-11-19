@@ -12,7 +12,7 @@
 - **Name:** SApay
 - **Subtitle (draft):** محفظة رقمية تجريبية
 - **Promotional text (draft):** استكشف تجربة المحافظ والأرصدة والتحويلات الافتراضية في بيئة تجريبية آمنة.
-- **Keywords (draft):** محفظة,رقمية,تجريبية,رصيد,تحويل,السودان,مدفوعات
+- **Keywords (draft):** محفظة,رقمية,تجريبية,رصيد,تحويل,السودان
 - **Description:**
 
 SApay نموذج تجريبي لاستكشاف تجربة استخدام محفظة رقمية في بيئة اختبار.
@@ -30,7 +30,7 @@ SApay نموذج تجريبي لاستكشاف تجربة استخدام محف�
 - **Name:** SApay
 - **Subtitle:** Demo Digital Wallet
 - **Promotional text:** Explore demo wallets, balances, and simulated transfers in a test environment.
-- **Keywords:** wallet,demo,digital, Sudan,transfers,balance,payments
+- **Keywords:** wallet,demo,digital, Sudan,transfers,balance
 - **Description:**
 
 SApay is a demonstration app for exploring a digital wallet experience in a test environment.

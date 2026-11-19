@@ -2,6 +2,12 @@ name: SApay iOS TestFlight build
 
 on:
   workflow_dispatch:
+    inputs:
+      upload_to_testflight:
+        description: 'Upload the signed build to TestFlight (requires explicit approval)'
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -92,7 +98,7 @@ jobs:
           if [ "$PROFILE_TEAM_ID" != "$IOS_TEAM_ID" ]; then
             echo "Provisioning profile TeamIdentifier mismatch. Expected $IOS_TEAM_ID, got $PROFILE_TEAM_ID"; exit 1
           fi
-          PROFILE_EXPIRY=$(/usr/libexec/PlistBuddy -c 'Print :ExpirationDate' "$DECODED_PROFILE")
+          PROFILE_EXPIRY=$(/usr/bin/plutil -extract ExpirationDate raw -o - "$DECODED_PROFILE")
           if ! /usr/bin/python3 -c 'import datetime,sys; d=datetime.datetime.fromisoformat(sys.argv[1].replace("Z","+00:00")); sys.exit(0 if d > datetime.datetime.now(datetime.timezone.utc) else 1)' "$PROFILE_EXPIRY"; then
             echo "Provisioning profile has expired"; exit 1
           fi
@@ -158,6 +164,7 @@ jobs:
           retention-days: 14
 
       - name: Upload build to TestFlight
+        if: ${{ inputs.upload_to_testflight == true }}
         uses: apple-actions/upload-testflight-build@v1
         with:
           app-path: ${{ env.IPA_PATH }}

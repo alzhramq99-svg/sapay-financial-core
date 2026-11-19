@@ -1,4 +1,6 @@
-/* Set apiBaseUrl to the deployed HTTPS API origin for native iOS builds. Never put secrets here. */
+/* API origin for the iOS app and for web builds hosted elsewhere (Vercel); it must be
+   allowed by src/security/cors.ts. Pages served from localhost use their own origin
+   instead (see apiOrigin in app.js). Never put secrets here. */
 window.SAPAY_CONFIG = Object.freeze({
   apiBaseUrl: 'https://sapay-api.onrender.com',
   // The API deployed on Render (deploy/render-staging) has no
