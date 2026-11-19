@@ -17,13 +17,29 @@ function apiOrigin() {
   return url.origin;
 }
 async function api(path, options = {}) {
-  const response = await fetch(apiOrigin() + '/api' + path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    if (response.status === 401 && state.token) logout(false);
-    throw new Error(data.message || 'تعذر إكمال الطلب. حاول مرة أخرى.');
-  }
-  return data;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(window.SAPAY_CONFIG?.requestTimeoutMs) || 20000);
+  try {
+    const response = await fetch(apiOrigin() + '/api' + path, {
+      ...options, signal: controller.signal,
+      headers: { ...headers(), ...(options.headers || {}) }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 401 && state.token) {
+        logout(false);
+        throw new Error('انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.');
+      }
+      if (response.status === 429) throw new Error('محاولات كثيرة خلال وقت قصير. انتظر قليلاً ثم حاول مجدداً.');
+      if (response.status >= 500) throw new Error('الخادم يواجه مشكلة مؤقتة. حاول مرة أخرى بعد قليل.');
+      throw new Error(data.message || 'تعذر إكمال الطلب. تحقق من البيانات وحاول مرة أخرى.');
+    }
+    return data;
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('استغرق الاتصال وقتاً أطول من المتوقع. قد يكون الخادم قيد التشغيل؛ حاول مجدداً.');
+    if (error instanceof TypeError) throw new Error('تعذر الاتصال بخادم SApay. تحقق من الإنترنت ثم حاول مجدداً.');
+    throw error;
+  } finally { clearTimeout(timeout); }
 }
 function message(id, text, ok = false) { const el = $(id); el.textContent = text || ''; el.classList.toggle('success', !!ok); }
 const biometricServer = 'sapay-financial-core';
@@ -289,13 +305,26 @@ if (state.token) {
   globalDestinations.sort((a,b)=>a.localeCompare(b,'ar'));
   const renderDirectory=(items,root,attribute)=>{root.innerHTML=items.map(name=>'<div class="directory-item"><b>'+escapeHtml(name)+'</b><em>قيد التخطيط · غير متاح للتحويل</em></div>').join('');};
   const bankRoot=pages.services.querySelector('#sudanBanks');
+  const renderBanks=(items)=>{bankRoot.innerHTML=items.map(name=>'<article class="directory-item bank-directory-item"><div><b>'+escapeHtml(name)+'</b><small>تحويل تجريبي داخلي · لا اتصال بالبنك</small></div><button type="button" class="outline-btn" data-demo-bank="'+escapeHtml(name)+'">تحويل تجريبي</button></article>').join('');};
   const bankSearch=pages.services.querySelector('#bankSearch');
   const destinationRoot=pages.services.querySelector('#globalDestinations');
   const countrySearch=pages.services.querySelector('#countrySearch');
-  renderDirectory(sudaneseBanks,bankRoot,'bank');renderDirectory(globalDestinations,destinationRoot,'destination');
-  bankSearch.addEventListener('input',()=>renderDirectory(sudaneseBanks.filter(n=>n.includes(bankSearch.value.trim())),bankRoot,'bank'));
+  renderBanks(sudaneseBanks);renderDirectory(globalDestinations,destinationRoot,'destination');
+  bankSearch.addEventListener('input',()=>renderBanks(sudaneseBanks.filter(n=>n.includes(bankSearch.value.trim()))));
   countrySearch.addEventListener('input',()=>renderDirectory(globalDestinations.filter(n=>n.includes(countrySearch.value.trim())),destinationRoot,'destination'));
-  pages.services.addEventListener('click',e=>{const item=e.target.closest('[data-institution]');if(item)toast('تم اختيار '+item.dataset.institution+' — عرض الرسوم والدفع غير متاحين في النسخة التجريبية.');});
+  pages.services.addEventListener('click',e=>{
+    const item=e.target.closest('[data-institution]');
+    if(item) toast('تم اختيار '+item.dataset.institution+' — الدفع الجامعي سيضاف في المرحلة التالية.');
+    const bank=e.target.closest('[data-demo-bank]');
+    if(bank){
+      if(!state.wallets.length){toast('أنشئ محفظة أولاً لإجراء تحويل تجريبي.');go('wallets');return;}
+      openAction('external',state.wallets[0].id);
+      $('externalMode').value='SUDAN_BANK';
+      $('externalProvider').value=bank.dataset.demoBank;
+      $('actionTitle').textContent='تحويل بنكي تجريبي';
+      $('actionHint').textContent='سيُخصم المبلغ من محفظتك التجريبية ويُسجل محاسبياً. لن يتم إرسال أي أموال إلى البنك.';
+    }
+  });
   pages.account.innerHTML=intro('الإعدادات والملف الشخصي','حسابي','معلومات حسابك وروابط السياسات وقنوات المساعدة.')+
     '<div class="account-card panel"><span class="account-icon">◎</span><div><small>البريد الإلكتروني المسجل</small><strong id="accountEmail">—</strong><small>نوع البيئة</small><strong>نسخة تجريبية فقط</strong></div></div>'+
     '<div class="account-links"><a href="/privacy.html">سياسة الخصوصية <span>←</span></a><a href="/support.html">الدعم والمساعدة <span>←</span></a><button id="accountLogout" type="button">تسجيل الخروج <span>←</span></button></div>'+
