@@ -27,7 +27,7 @@ describe('PostgresLedgerService external bank demo transfer', () => {
 
   beforeEach(() => { statements = []; balance = '1000'; jest.clearAllMocks(); });
 
-  it('posts a debit to the wallet and a matching credit to demo clearing in one transaction', async () => {
+  it('reduces the wallet balance and posts a matching demo clearing entry in one transaction', async () => {
     const result = await service.externalTransfer(input);
     const posting = statements.find((entry) => entry.sql.includes('INSERT INTO ledger_postings'));
     expect(posting).toBeDefined();
