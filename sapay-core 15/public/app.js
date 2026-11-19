@@ -252,11 +252,13 @@ if (state.token) {
   const shortcuts=document.createElement('div');shortcuts.className='home-shortcuts';
   shortcuts.innerHTML='<button class="shortcut-card" data-go="wallets" type="button"><span>◈</span><b>إدارة المحافظ</b><small>الأرصدة والمحافظ</small></button><button class="shortcut-card" data-go="transfers" type="button"><span>⇄</span><b>تحويل تجريبي</b><small>بين محافظ SApay</small></button><button class="shortcut-card" data-go="services" type="button"><span>▦</span><b>الخدمات</b><small>الفواتير والخدمات السودانية</small></button>';
   pages.home.append(shortcuts);
+  // Keep the original live wallet and ledger panels on the dashboard; do not hide them behind secondary tabs.
+  if(walletHeading) pages.home.append(walletHeading);
+  if(wallets) pages.home.append(wallets);
+  if(historyHeading) pages.home.append(historyHeading);
+  if(history) pages.home.append(history);
   if(footer) pages.home.append(footer);
-  if(walletHeading) pages.wallets.append(walletHeading);
-  if(wallets) pages.wallets.append(wallets);
-  if(historyHeading) pages.history.append(historyHeading);
-  if(history) pages.history.append(history);
+  pages.wallets.innerHTML=intro('إدارة الحساب','محافظي','تظهر أرصدتك ومحافظك وسجل العمليات مباشرة في الصفحة الرئيسية. ارجع إلى الرئيسية لعرض البيانات وإدارتها.');
   const intro=(eyebrow,title,description)=>'<div class="page-intro"><div class="eyebrow">'+eyebrow+'</div><h2>'+title+'</h2><p>'+description+'</p></div>';
   pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
     '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
