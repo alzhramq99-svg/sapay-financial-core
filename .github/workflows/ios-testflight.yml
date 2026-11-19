@@ -48,7 +48,7 @@ jobs:
           npm install
           npm run copy:web
           npx cap add ios
-          npx cap sync ios
+          npm run cap:sync
 
       - name: Install Apple Distribution certificate
         env:
