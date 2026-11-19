@@ -17,6 +17,8 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream', 'cache-control': 'no-cache' }); fs.createReadStream(f).pipe(res);
 }).listen(4173);
 const API = 'https://sapay-api.onrender.com/api';
+// Read the cache name from the worker itself so a version bump cannot leave this test stale.
+const CACHE_NAME = 'sapay-iphone-shell-' + fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8').match(/CACHE_VERSION = '([^']+)'/)[1];
 const results = []; const check = (name, ok, extra='') => { results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? ' — ' + extra : ''}`); };
 (async () => {
   const browser = await chromium.launch();
@@ -42,7 +44,7 @@ const results = []; const check = (name, ok, extra='') => { results.push(`${ok ?
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload(); await page.waitForTimeout(500);
   check('service worker controls page', await page.evaluate(() => Boolean(navigator.serviceWorker.controller)));
-  const cached = await page.evaluate(async () => (await (await caches.open('sapay-iphone-shell-v5')).keys()).map(r => new URL(r.url).pathname));
+  const cached = await page.evaluate(async (name) => (await (await caches.open(name)).keys()).map(r => new URL(r.url).pathname), CACHE_NAME);
   check('shell cached incl. runtime-config and PNG icon', ['/runtime-config.js','/icons/sapay-180.png','/design-tokens.css','/app.js'].every(p => cached.includes(p)), cached.join(','));
   check('health warm-up request sent on open', calls.includes('GET /api/health'));
   check('Face ID button hidden on web', await page.locator('#faceIdLogin').isHidden());
