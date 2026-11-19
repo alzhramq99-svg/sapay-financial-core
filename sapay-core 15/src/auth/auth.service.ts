@@ -39,10 +39,10 @@ export class AuthService {
       if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) throw new Error();
       const data = `${parts[0]}.${parts[1]}`;
       const expected = createHmac('sha256', this.secret()).update(data).digest();
-      const actual = Buffer.from(parts[2]!, 'base64url');
+      const actual = Buffer.from(parts[2], 'base64url');
       if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw new Error();
-      const header = JSON.parse(Buffer.from(parts[0]!, 'base64url').toString());
-      const payload = JSON.parse(Buffer.from(parts[1]!, 'base64url').toString());
+      const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
       if (header.alg !== 'HS256' || header.typ !== 'JWT' ||
           typeof payload.sub !== 'string' || payload.sub.length === 0 ||
           payload.iss !== TOKEN_ISSUER || payload.aud !== TOKEN_AUDIENCE ||
