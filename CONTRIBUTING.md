@@ -25,7 +25,10 @@ authentication or migrations.
 3. **Pull request** using the template. Explain the decisions and trade-offs,
    not only the diff.
 4. **CI must be green.** CI runs on every pull request, whatever its base
-   branch.
+   branch, provided that base branch already contains the current
+   `.github/workflows/sapay-ci.yml`. GitHub runs the workflow from the merge
+   of the PR into its base, so a long-lived branch created before that file
+   changed must first receive it (merge `main` into it) before its PRs get CI.
 5. **Review, then the owner's approval, then merge.** Authors never merge their
    own pull requests.
 
