@@ -78,6 +78,14 @@ async function initializeFaceId() {
   } catch { /* Keep password login available if biometric setup is unavailable. */ }
 }
 initializeFaceId();
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!window.__sapaySwReloaded) { window.__sapaySwReloaded = true; window.location.reload(); }
+  });
+}
+window.addEventListener('load', () => {
+  if (navigator.onLine) api('/health').catch(() => {});
+});
 
 function toast(text) { const el = $('toast'); el.textContent = text; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2600); }
 function setAuthMode(mode) {
