@@ -2,6 +2,6 @@
 window.SAPAY_CONFIG = Object.freeze({
   apiBaseUrl: 'https://sapay-api.onrender.com',
   externalTransfers: false,
-  bankDemoTransfers: true,
+  bankDemoTransfers: false,
   requestTimeoutMs: 25000
 });
