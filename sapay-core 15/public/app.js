@@ -6,6 +6,9 @@ const money = (minor) => { try { return BigInt(minor || '0').toLocaleString('en-
 const headers = () => ({ 'Content-Type': 'application/json', ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}) });
 const nativeRuntime = window.location.protocol === 'capacitor:';
 const configuredApiBase = String(window.SAPAY_CONFIG?.apiBaseUrl || '').trim().replace(/\/+$/, '');
+const externalTransfersEnabled = window.SAPAY_CONFIG?.features?.externalTransfers === true;
+// Render's free plan sleeps when idle; the first request can take close to a minute.
+const REQUEST_TIMEOUT_MS = 60_000;
 function apiOrigin() {
   const base = configuredApiBase || (nativeRuntime ? '' : window.location.origin);
   if (!base) throw new Error('لم يتم إعداد عنوان خادم SApay لهذا الإصدار التجريبي.');
@@ -16,15 +19,39 @@ function apiOrigin() {
   }
   return url.origin;
 }
+// Safari reports network failures as a bare English "Load failed"; map every
+// failure mode to a clear Arabic message instead.
 async function api(path, options = {}) {
-  const response = await fetch(apiOrigin() + '/api' + path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
+  if (navigator.onLine === false) throw new Error('لا يوجد اتصال بالإنترنت. تحقق من الشبكة ثم أعد المحاولة.');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let response;
+  try {
+    response = await fetch(apiOrigin() + '/api' + path, { ...options, signal: controller.signal, headers: { ...headers(), ...(options.headers || {}) } });
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('استغرق خادم SApay وقتًا أطول من المعتاد. قد يكون قيد التشغيل؛ أعد المحاولة بعد لحظات.');
+    throw new Error('تعذر الوصول إلى خادم SApay. تحقق من الإنترنت ثم أعد المحاولة.');
+  } finally {
+    clearTimeout(timer);
+  }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (response.status === 401 && state.token) logout(false);
+    if (response.status === 401 && state.token) {
+      logout(false);
+      throw new Error('انتهت الجلسة. سجّل الدخول مرة أخرى.');
+    }
+    if (response.status === 429) throw new Error('محاولات كثيرة خلال وقت قصير. انتظر دقيقة ثم أعد المحاولة.');
+    if (response.status >= 500) throw new Error('حدث خطأ في خادم SApay. أعد المحاولة لاحقًا.');
     throw new Error(data.message || 'تعذر إكمال الطلب. حاول مرة أخرى.');
   }
   return data;
 }
+// Wake the sleeping free-plan API as soon as the app opens, so the user's
+// first real request does not pay the whole cold start. Failures are ignored.
+function warmUpApi() {
+  try { fetch(apiOrigin() + '/api/health', { cache: 'no-store' }).catch(() => {}); } catch { /* not configured */ }
+}
+warmUpApi();
 function message(id, text, ok = false) { const el = $(id); el.textContent = text || ''; el.classList.toggle('success', !!ok); }
 const biometricServer = 'sapay-financial-core';
 async function configureFaceIdAfterLogin(email, password) {
@@ -126,7 +153,7 @@ function renderWallets() {
     <div class="wallet-head"><span class="currency-icon">${escapeHtml(w.currency.slice(0,2))}</span><span class="wallet-currency">${escapeHtml(w.currency)} · محفظة تجريبية</span></div>
     <div class="wallet-balance">${money(w.balanceMinor)} <small>${escapeHtml(w.currency)}</small></div>
     <div class="wallet-id">ID: ${escapeHtml(w.id)}</div>
-    <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل داخلي</button><button class="outline-btn" data-external="${escapeHtml(w.id)}">تحويل خارجي تجريبي</button></div>
+    <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل داخلي</button>${externalTransfersEnabled ? `<button class="outline-btn" data-external="${escapeHtml(w.id)}">تحويل خارجي تجريبي</button>` : ''}</div>
   </article>`).join('');
   root.querySelectorAll('[data-credit]').forEach(btn => btn.addEventListener('click', () => openAction('credit', btn.dataset.credit)));
   root.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => openAction('transfer', btn.dataset.send)));
@@ -154,6 +181,7 @@ $('walletForm').addEventListener('submit', async (event) => {
   finally { button.disabled = false; }
 });
 function openAction(type, walletId) {
+  if (type === 'external' && !externalTransfersEnabled) { toast('التحويل الخارجي التجريبي غير متاح في هذه النسخة.'); return; }
   $('actionForm').reset(); message('actionMessage',''); actionIdempotencyKey = crypto.randomUUID(); $('actionType').value = type;
   $('actionTitle').textContent = type === 'credit' ? 'شحن رصيد تجريبي' : type === 'external' ? 'تحويل خارجي تجريبي' : 'تحويل داخلي تجريبي';
   $('destinationWrap').hidden = type !== 'transfer'; $('creditWrap').hidden = type !== 'credit';
