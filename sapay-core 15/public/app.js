@@ -6,6 +6,9 @@ const money = (minor) => { try { return BigInt(minor || '0').toLocaleString('en-
 const headers = () => ({ 'Content-Type': 'application/json', ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}) });
 const nativeRuntime = window.location.protocol === 'capacitor:';
 const configuredApiBase = String(window.SAPAY_CONFIG?.apiBaseUrl || '').trim().replace(/\/+$/, '');
+const externalTransfersEnabled = window.SAPAY_CONFIG?.features?.externalTransfers === true;
+// Render's free plan sleeps when idle; the first request can take close to a minute.
+const REQUEST_TIMEOUT_MS = 60_000;
 function apiOrigin() {
   const base = configuredApiBase || (nativeRuntime ? '' : window.location.origin);
   if (!base) throw new Error('لم يتم إعداد عنوان خادم SApay لهذا الإصدار التجريبي.');
@@ -16,15 +19,39 @@ function apiOrigin() {
   }
   return url.origin;
 }
+// Safari reports network failures as a bare English "Load failed"; map every
+// failure mode to a clear Arabic message instead.
 async function api(path, options = {}) {
-  const response = await fetch(apiOrigin() + '/api' + path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
+  if (navigator.onLine === false) throw new Error('لا يوجد اتصال بالإنترنت. تحقق من الشبكة ثم أعد المحاولة.');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let response;
+  try {
+    response = await fetch(apiOrigin() + '/api' + path, { ...options, signal: controller.signal, headers: { ...headers(), ...(options.headers || {}) } });
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('استغرق خادم SApay وقتًا أطول من المعتاد. قد يكون قيد التشغيل؛ أعد المحاولة بعد لحظات.');
+    throw new Error('تعذر الوصول إلى خادم SApay. تحقق من الإنترنت ثم أعد المحاولة.');
+  } finally {
+    clearTimeout(timer);
+  }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (response.status === 401 && state.token) logout(false);
+    if (response.status === 401 && state.token) {
+      logout(false);
+      throw new Error('انتهت الجلسة. سجّل الدخول مرة أخرى.');
+    }
+    if (response.status === 429) throw new Error('محاولات كثيرة خلال وقت قصير. انتظر دقيقة ثم أعد المحاولة.');
+    if (response.status >= 500) throw new Error('حدث خطأ في خادم SApay. أعد المحاولة لاحقًا.');
     throw new Error(data.message || 'تعذر إكمال الطلب. حاول مرة أخرى.');
   }
   return data;
 }
+// Wake the sleeping free-plan API as soon as the app opens, so the user's
+// first real request does not pay the whole cold start. Failures are ignored.
+function warmUpApi() {
+  try { fetch(apiOrigin() + '/api/health', { cache: 'no-store' }).catch(() => {}); } catch { /* not configured */ }
+}
+warmUpApi();
 function message(id, text, ok = false) { const el = $(id); el.textContent = text || ''; el.classList.toggle('success', !!ok); }
 const biometricServer = 'sapay-financial-core';
 async function configureFaceIdAfterLogin(email, password) {
@@ -126,7 +153,7 @@ function renderWallets() {
     <div class="wallet-head"><span class="currency-icon">${escapeHtml(w.currency.slice(0,2))}</span><span class="wallet-currency">${escapeHtml(w.currency)} · محفظة تجريبية</span></div>
     <div class="wallet-balance">${money(w.balanceMinor)} <small>${escapeHtml(w.currency)}</small></div>
     <div class="wallet-id">ID: ${escapeHtml(w.id)}</div>
-    <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل داخلي</button><button class="outline-btn" data-external="${escapeHtml(w.id)}">تحويل خارجي تجريبي</button></div>
+    <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل داخلي</button>${externalTransfersEnabled ? `<button class="outline-btn" data-external="${escapeHtml(w.id)}">تحويل خارجي تجريبي</button>` : ''}</div>
   </article>`).join('');
   root.querySelectorAll('[data-credit]').forEach(btn => btn.addEventListener('click', () => openAction('credit', btn.dataset.credit)));
   root.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => openAction('transfer', btn.dataset.send)));
@@ -154,6 +181,7 @@ $('walletForm').addEventListener('submit', async (event) => {
   finally { button.disabled = false; }
 });
 function openAction(type, walletId) {
+  if (type === 'external' && !externalTransfersEnabled) { toast('التحويل الخارجي التجريبي غير متاح في هذه النسخة.'); return; }
   $('actionForm').reset(); message('actionMessage',''); actionIdempotencyKey = crypto.randomUUID(); $('actionType').value = type;
   $('actionTitle').textContent = type === 'credit' ? 'شحن رصيد تجريبي' : type === 'external' ? 'تحويل خارجي تجريبي' : 'تحويل داخلي تجريبي';
   $('destinationWrap').hidden = type !== 'transfer'; $('creditWrap').hidden = type !== 'credit';
@@ -212,7 +240,7 @@ if (state.token) {
   const footer=root.querySelector('.footer-note');
   const nav=document.createElement('nav');
   nav.className='app-nav'; nav.setAttribute('aria-label','التنقل الرئيسي');
-  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['support','?','المساعدة'],['account','◎','حسابي'],['settings','⚙','الإعدادات']];
+  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['cards','▣','بطاقتي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['support','?','المساعدة'],['account','◎','حسابي'],['settings','⚙','الإعدادات']];
   definitions.forEach(([key,icon,label],i)=>{
     const button=document.createElement('button'); button.type='button'; button.className='nav-item'+(i===0?' active':'');
     button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
@@ -237,6 +265,42 @@ if (state.token) {
     '<div class="action-feature panel"><div class="feature-symbol">⌂</div><div><h3>تحويل بنكي محلي</h3><p>اختر البنك المستهدف من دليل البنوك في صفحة الخدمات. الربط المصرفي والتنفيذ الفعلي غير متاحين حاليًا.</p><button class="outline-btn" data-go="services" type="button">استعراض البنوك السودانية</button></div></div>'+
     '<div class="section-heading"><div><div class="eyebrow">عبر الحدود</div><h2>التحويلات العالمية</h2></div></div>'+
     '<div class="action-feature panel"><div class="feature-symbol">◎</div><div><h3>تحويل دولي</h3><p>وجهات مستهدفة تشمل الخليج ومصر وتركيا وأوروبا والمملكة المتحدة والولايات المتحدة. شبكات التحويل ومقدمو الخدمة لم يتم تفعيلهم.</p><button class="outline-btn" data-go="services" type="button">استعراض الوجهات العالمية</button></div></div>';
+  pages.cards.innerHTML=intro('SApay Virtual','بطاقتك الافتراضية','بطاقة رقمية تجريبية بتصميم SApay الفاخر. هذه البطاقة للعرض والمحاكاة داخل التطبيق فقط، ولا تحمل رقمًا مصرفيًا صالحًا للشراء.')+
+    '<section class="virtual-card-wrap"><article class="virtual-card" aria-label="بطاقة SApay افتراضية تجريبية">'+
+    '<div class="virtual-card-top"><span class="virtual-card-chip" aria-hidden="true">▦</span><span class="virtual-card-network">VIRTUAL · DEMO</span></div>'+
+    '<div class="virtual-card-brand"><span class="virtual-card-mark">SA</span><strong>SA<span>pay</span></strong><small>بطاقة افتراضية</small></div>'+
+    '<div class="virtual-card-number" dir="ltr">•••• &nbsp; •••• &nbsp; •••• &nbsp; 4242</div>'+
+    '<div class="virtual-card-bottom"><div><small>VALID THRU</small><b>12/30</b></div><div><small>CARDHOLDER</small><b>SApay DEMO USER</b></div><span class="virtual-card-flag" aria-label="ألوان الهوية السودانية">●</span></div>'+
+    '</article></section>'+
+    '<div class="virtual-card-status panel"><span class="card-status-dot"></span><div><b id="demoCardStatus">البطاقة نشطة تجريبيًا</b><small>حالة محلية للعرض فقط — لا يوجد اتصال بشبكة Visa أو Mastercard</small></div></div>'+
+    '<div class="card-actions"><button id="toggleDemoCard" class="primary" type="button">تجميد البطاقة</button><button id="revealDemoCard" class="outline-btn" type="button" aria-expanded="false">عرض بيانات الاختبار</button></div>'+
+    '<div id="demoCardDetails" class="demo-card-details panel" hidden><div><small>رقم اختباري غير صالح للدفع</small><b dir="ltr">0000 0000 0000 4242</b></div><div><small>تاريخ افتراضي</small><b dir="ltr">12/30</b></div><div><small>رمز أمان توضيحي فقط</small><b dir="ltr">•••</b></div></div>'+
+    '<div class="notice card-demo-notice"><strong>تنبيه مهم:</strong> لا توجد أموال أو حساب مصرفي أو جهة إصدار مرتبطة بهذه البطاقة. لا تستخدم بياناتها في أي موقع أو عملية شراء. التجميد هنا يغيّر حالة العرض على هذا الجهاز فقط.</div>'+
+    '<section class="panel card-roadmap"><h3>الربط بجهة إصدار مستقبلًا</h3><p>تم فصل البطاقة التجريبية عن أي معالج دفع. عند اعتماد جهة إصدار مرخصة، ستُستبدل بيانات العرض بواجهة خادم آمنة لإصدار البطاقة وإدارتها، دون تخزين رقم البطاقة الكامل أو رمز CVV في التطبيق.</p><ul><li>التحقق من هوية العميل ومتطلبات KYC/AML لدى الشريك.</li><li>إصدار البطاقة وإيقافها عبر واجهة مزود الإصدار.</li><li>عرض البيانات الحساسة عبر مكوّن آمن مستضاف من الجهة المصدرة.</li><li>ربط حدود الإنفاق والتنبيهات وسجل العمليات بعد الاعتماد.</li></ul></section>';
+  const cardStateKey='sapay_demo_virtual_card_frozen_v1';
+  let demoCardFrozen=localStorage.getItem(cardStateKey)==='true';
+  const cardStatus=$('demoCardStatus');
+  const freezeButton=$('toggleDemoCard');
+  const renderDemoCardState=()=>{
+    if(!cardStatus||!freezeButton)return;
+    cardStatus.textContent=demoCardFrozen?'البطاقة مجمّدة تجريبيًا':'البطاقة نشطة تجريبيًا';
+    freezeButton.textContent=demoCardFrozen?'إلغاء التجميد التجريبي':'تجميد البطاقة';
+    freezeButton.classList.toggle('card-frozen-button',demoCardFrozen);
+  };
+  freezeButton.addEventListener('click',()=>{
+    demoCardFrozen=!demoCardFrozen;
+    localStorage.setItem(cardStateKey,String(demoCardFrozen));
+    renderDemoCardState();
+    toast(demoCardFrozen?'تم تجميد البطاقة في وضع العرض.':'تم إلغاء التجميد في وضع العرض.');
+  });
+  $('revealDemoCard').addEventListener('click',()=>{
+    const details=$('demoCardDetails');
+    const opening=details.hidden;
+    details.hidden=!opening;
+    $('revealDemoCard').setAttribute('aria-expanded',String(opening));
+    $('revealDemoCard').textContent=opening?'إخفاء بيانات الاختبار':'عرض بيانات الاختبار';
+  });
+  renderDemoCardState();
   pages.services.innerHTML=intro('منظومة خدمات السودان','الخدمات والمدفوعات','استعرض الجهات السودانية والخدمات المستهدفة. جميع خيارات السداد والربط معروضة للتعريف والتخطيط فقط، وليست متاحة للدفع الحقيقي.')+
     '<div class="service-grid">'+
     '<article class="service-card"><span>▤</span><h3>فواتير الاتصالات</h3><p>زين، سوداني، MTN، كنار</p><em>عرض الجهات</em></article>'+
