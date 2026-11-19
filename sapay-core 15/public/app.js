@@ -312,7 +312,7 @@ if (state.token) {
   globalDestinations.sort((a,b)=>a.localeCompare(b,'ar'));
   const renderDirectory=(items,root,attribute)=>{root.innerHTML=items.map(name=>'<div class="directory-item"><b>'+escapeHtml(name)+'</b><em>قيد التخطيط · غير متاح للتحويل</em></div>').join('');};
   const bankRoot=pages.services.querySelector('#sudanBanks');
-  const renderBanks=(items)=>{bankRoot.innerHTML=items.map(name=>'<article class="directory-item bank-directory-item"><div><b>'+escapeHtml(name)+'</b><small>تحويل تجريبي داخلي · لا اتصال بالبنك</small></div><button type="button" class="outline-btn" data-demo-bank="'+escapeHtml(name)+'">تحويل تجريبي</button></article>').join('');};
+  const renderBanks=(items)=>{const enabled=!!window.SAPAY_CONFIG?.bankDemoTransfers;bankRoot.innerHTML=items.map(name=>'<article class="directory-item bank-directory-item"><div><b>'+escapeHtml(name)+'</b><small>تحويل تجريبي داخلي · لا اتصال بالبنك</small></div><button type="button" class="outline-btn" data-demo-bank="'+escapeHtml(name)+'" '+(enabled?'':'disabled')+'>'+(enabled?'تحويل تجريبي':'بانتظار تفعيل الخادم')+'</button></article>').join('');};
   const bankSearch=pages.services.querySelector('#bankSearch');
   const destinationRoot=pages.services.querySelector('#globalDestinations');
   const countrySearch=pages.services.querySelector('#countrySearch');
