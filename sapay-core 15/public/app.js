@@ -246,7 +246,7 @@ if (state.token) {
     button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
   });
   notice?.after(nav);
-  const makePage=(key)=>{const section=document.createElement('section');section.className='page-view'+(key==='home'?' active':'');section.dataset.view=key;return section;};
+  const makePage=(key)=>{const section=document.createElement('section');section.className='page-view'+(key==='home'?' active':'');section.dataset.view=key;section.hidden=key!=='home';section.style.display=key==='home'?'block':'none';section.style.minHeight='1px';return section;};
   const pages={}; definitions.forEach(([key])=>pages[key]=makePage(key));
   if(balance) pages.home.append(balance);
   const shortcuts=document.createElement('div');shortcuts.className='home-shortcuts';
@@ -380,8 +380,11 @@ if (state.token) {
     '<a class="setting-row" href="/support.html"><div><b>الدعم والمساعدة</b><small>قنوات التواصل وحالة الدعم</small></div><span>←</span></a>'+
     '</div><div class="notice">لا تغيّر هذه الإعدادات طريقة معالجة البيانات أو صلاحيات الحساب. لا تدخل معلومات مالية أو شخصية حساسة في النسخة التجريبية.</div>';
   definitions.forEach(([key])=>root.append(pages[key]));
+  // iOS Safari/PWA recovery: explicitly expose the first page instead of relying only on class CSS.
+  pages.home.hidden=false;pages.home.style.display='block';pages.home.classList.add('active');
+  if(!pages.home.childElementCount){pages.home.innerHTML=intro('لوحة المحفظة','مرحبًا بك في SApay','تم فتح لوحة التحكم. حدّث الصفحة أو أعد المحاولة لتحميل بيانات المحافظ.');}
   const go=(key)=>{
-    definitions.forEach(([name])=>{pages[name].classList.toggle('active',name===key);nav.querySelector('[data-page="'+name+'"]').classList.toggle('active',name===key);});
+    definitions.forEach(([name])=>{const active=name===key;pages[name].classList.toggle('active',active);pages[name].hidden=!active;pages[name].style.display=active?'block':'none';nav.querySelector('[data-page="'+name+'"]').classList.toggle('active',active);});
     if(key==='history') loadHistory();
     if(key==='account') $('accountEmail').textContent=state.user?.email||'حسابك التجريبي';
     window.scrollTo({top:0,behavior:'smooth'});
