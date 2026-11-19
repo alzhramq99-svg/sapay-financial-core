@@ -240,7 +240,7 @@ if (state.token) {
   const footer=root.querySelector('.footer-note');
   const nav=document.createElement('nav');
   nav.className='app-nav'; nav.setAttribute('aria-label','التنقل الرئيسي');
-  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['support','?','المساعدة'],['account','◎','حسابي'],['settings','⚙','الإعدادات']];
+  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['cards','▣','بطاقتي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['support','?','المساعدة'],['account','◎','حسابي'],['settings','⚙','الإعدادات']];
   definitions.forEach(([key,icon,label],i)=>{
     const button=document.createElement('button'); button.type='button'; button.className='nav-item'+(i===0?' active':'');
     button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
@@ -265,6 +265,42 @@ if (state.token) {
     '<div class="action-feature panel"><div class="feature-symbol">⌂</div><div><h3>تحويل بنكي محلي</h3><p>اختر البنك المستهدف من دليل البنوك في صفحة الخدمات. الربط المصرفي والتنفيذ الفعلي غير متاحين حاليًا.</p><button class="outline-btn" data-go="services" type="button">استعراض البنوك السودانية</button></div></div>'+
     '<div class="section-heading"><div><div class="eyebrow">عبر الحدود</div><h2>التحويلات العالمية</h2></div></div>'+
     '<div class="action-feature panel"><div class="feature-symbol">◎</div><div><h3>تحويل دولي</h3><p>وجهات مستهدفة تشمل الخليج ومصر وتركيا وأوروبا والمملكة المتحدة والولايات المتحدة. شبكات التحويل ومقدمو الخدمة لم يتم تفعيلهم.</p><button class="outline-btn" data-go="services" type="button">استعراض الوجهات العالمية</button></div></div>';
+  pages.cards.innerHTML=intro('SApay Virtual','بطاقتك الافتراضية','بطاقة رقمية تجريبية بتصميم SApay الفاخر. هذه البطاقة للعرض والمحاكاة داخل التطبيق فقط، ولا تحمل رقمًا مصرفيًا صالحًا للشراء.')+
+    '<section class="virtual-card-wrap"><article class="virtual-card" aria-label="بطاقة SApay افتراضية تجريبية">'+
+    '<div class="virtual-card-top"><span class="virtual-card-chip" aria-hidden="true">▦</span><span class="virtual-card-network">VIRTUAL · DEMO</span></div>'+
+    '<div class="virtual-card-brand"><span class="virtual-card-mark">SA</span><strong>SA<span>pay</span></strong><small>بطاقة افتراضية</small></div>'+
+    '<div class="virtual-card-number" dir="ltr">•••• &nbsp; •••• &nbsp; •••• &nbsp; 4242</div>'+
+    '<div class="virtual-card-bottom"><div><small>VALID THRU</small><b>12/30</b></div><div><small>CARDHOLDER</small><b>SApay DEMO USER</b></div><span class="virtual-card-flag" aria-label="ألوان الهوية السودانية">●</span></div>'+
+    '</article></section>'+
+    '<div class="virtual-card-status panel"><span class="card-status-dot"></span><div><b id="demoCardStatus">البطاقة نشطة تجريبيًا</b><small>حالة محلية للعرض فقط — لا يوجد اتصال بشبكة Visa أو Mastercard</small></div></div>'+
+    '<div class="card-actions"><button id="toggleDemoCard" class="primary" type="button">تجميد البطاقة</button><button id="revealDemoCard" class="outline-btn" type="button" aria-expanded="false">عرض بيانات الاختبار</button></div>'+
+    '<div id="demoCardDetails" class="demo-card-details panel" hidden><div><small>رقم اختباري غير صالح للدفع</small><b dir="ltr">0000 0000 0000 4242</b></div><div><small>تاريخ افتراضي</small><b dir="ltr">12/30</b></div><div><small>رمز أمان توضيحي فقط</small><b dir="ltr">•••</b></div></div>'+
+    '<div class="notice card-demo-notice"><strong>تنبيه مهم:</strong> لا توجد أموال أو حساب مصرفي أو جهة إصدار مرتبطة بهذه البطاقة. لا تستخدم بياناتها في أي موقع أو عملية شراء. التجميد هنا يغيّر حالة العرض على هذا الجهاز فقط.</div>'+
+    '<section class="panel card-roadmap"><h3>الربط بجهة إصدار مستقبلًا</h3><p>تم فصل البطاقة التجريبية عن أي معالج دفع. عند اعتماد جهة إصدار مرخصة، ستُستبدل بيانات العرض بواجهة خادم آمنة لإصدار البطاقة وإدارتها، دون تخزين رقم البطاقة الكامل أو رمز CVV في التطبيق.</p><ul><li>التحقق من هوية العميل ومتطلبات KYC/AML لدى الشريك.</li><li>إصدار البطاقة وإيقافها عبر واجهة مزود الإصدار.</li><li>عرض البيانات الحساسة عبر مكوّن آمن مستضاف من الجهة المصدرة.</li><li>ربط حدود الإنفاق والتنبيهات وسجل العمليات بعد الاعتماد.</li></ul></section>';
+  const cardStateKey='sapay_demo_virtual_card_frozen_v1';
+  let demoCardFrozen=localStorage.getItem(cardStateKey)==='true';
+  const cardStatus=$('demoCardStatus');
+  const freezeButton=$('toggleDemoCard');
+  const renderDemoCardState=()=>{
+    if(!cardStatus||!freezeButton)return;
+    cardStatus.textContent=demoCardFrozen?'البطاقة مجمّدة تجريبيًا':'البطاقة نشطة تجريبيًا';
+    freezeButton.textContent=demoCardFrozen?'إلغاء التجميد التجريبي':'تجميد البطاقة';
+    freezeButton.classList.toggle('card-frozen-button',demoCardFrozen);
+  };
+  freezeButton.addEventListener('click',()=>{
+    demoCardFrozen=!demoCardFrozen;
+    localStorage.setItem(cardStateKey,String(demoCardFrozen));
+    renderDemoCardState();
+    toast(demoCardFrozen?'تم تجميد البطاقة في وضع العرض.':'تم إلغاء التجميد في وضع العرض.');
+  });
+  $('revealDemoCard').addEventListener('click',()=>{
+    const details=$('demoCardDetails');
+    const opening=details.hidden;
+    details.hidden=!opening;
+    $('revealDemoCard').setAttribute('aria-expanded',String(opening));
+    $('revealDemoCard').textContent=opening?'إخفاء بيانات الاختبار':'عرض بيانات الاختبار';
+  });
+  renderDemoCardState();
   pages.services.innerHTML=intro('منظومة خدمات السودان','الخدمات والمدفوعات','استعرض الجهات السودانية والخدمات المستهدفة. جميع خيارات السداد والربط معروضة للتعريف والتخطيط فقط، وليست متاحة للدفع الحقيقي.')+
     '<div class="service-grid">'+
     '<article class="service-card"><span>▤</span><h3>فواتير الاتصالات</h3><p>زين، سوداني، MTN، كنار</p><em>عرض الجهات</em></article>'+
