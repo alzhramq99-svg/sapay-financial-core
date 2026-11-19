@@ -246,17 +246,19 @@ if (state.token) {
     button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
   });
   notice?.after(nav);
-  const makePage=(key)=>{const section=document.createElement('section');section.className='page-view'+(key==='home'?' active':'');section.dataset.view=key;return section;};
+  const makePage=(key)=>{const section=document.createElement('section');section.className='page-view'+(key==='home'?' active':'');section.dataset.view=key;section.hidden=key!=='home';section.style.display=key==='home'?'block':'none';section.style.minHeight='1px';return section;};
   const pages={}; definitions.forEach(([key])=>pages[key]=makePage(key));
   if(balance) pages.home.append(balance);
   const shortcuts=document.createElement('div');shortcuts.className='home-shortcuts';
   shortcuts.innerHTML='<button class="shortcut-card" data-go="wallets" type="button"><span>◈</span><b>إدارة المحافظ</b><small>الأرصدة والمحافظ</small></button><button class="shortcut-card" data-go="transfers" type="button"><span>⇄</span><b>تحويل تجريبي</b><small>بين محافظ SApay</small></button><button class="shortcut-card" data-go="services" type="button"><span>▦</span><b>الخدمات</b><small>الفواتير والخدمات السودانية</small></button>';
   pages.home.append(shortcuts);
+  // Keep the original live wallet and ledger panels on the dashboard; do not hide them behind secondary tabs.
+  if(walletHeading) pages.home.append(walletHeading);
+  if(wallets) pages.home.append(wallets);
+  if(historyHeading) pages.home.append(historyHeading);
+  if(history) pages.home.append(history);
   if(footer) pages.home.append(footer);
-  if(walletHeading) pages.wallets.append(walletHeading);
-  if(wallets) pages.wallets.append(wallets);
-  if(historyHeading) pages.history.append(historyHeading);
-  if(history) pages.history.append(history);
+  pages.wallets.innerHTML='<div class="page-intro"><div class="eyebrow">إدارة الحساب</div><h2>محافظي</h2><p>تظهر أرصدتك ومحافظك وسجل العمليات مباشرة في الصفحة الرئيسية. ارجع إلى الرئيسية لعرض البيانات وإدارتها.</p></div>';
   const intro=(eyebrow,title,description)=>'<div class="page-intro"><div class="eyebrow">'+eyebrow+'</div><h2>'+title+'</h2><p>'+description+'</p></div>';
   pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
     '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
@@ -380,8 +382,11 @@ if (state.token) {
     '<a class="setting-row" href="/support.html"><div><b>الدعم والمساعدة</b><small>قنوات التواصل وحالة الدعم</small></div><span>←</span></a>'+
     '</div><div class="notice">لا تغيّر هذه الإعدادات طريقة معالجة البيانات أو صلاحيات الحساب. لا تدخل معلومات مالية أو شخصية حساسة في النسخة التجريبية.</div>';
   definitions.forEach(([key])=>root.append(pages[key]));
+  // iOS Safari/PWA recovery: explicitly expose the first page instead of relying only on class CSS.
+  pages.home.hidden=false;pages.home.style.display='block';pages.home.classList.add('active');
+  if(!pages.home.childElementCount){pages.home.innerHTML=intro('لوحة المحفظة','مرحبًا بك في SApay','تم فتح لوحة التحكم. حدّث الصفحة أو أعد المحاولة لتحميل بيانات المحافظ.');}
   const go=(key)=>{
-    definitions.forEach(([name])=>{pages[name].classList.toggle('active',name===key);nav.querySelector('[data-page="'+name+'"]').classList.toggle('active',name===key);});
+    definitions.forEach(([name])=>{const active=name===key;pages[name].classList.toggle('active',active);pages[name].hidden=!active;pages[name].style.display=active?'block':'none';nav.querySelector('[data-page="'+name+'"]').classList.toggle('active',active);});
     if(key==='history') loadHistory();
     if(key==='account') $('accountEmail').textContent=state.user?.email||'حسابك التجريبي';
     window.scrollTo({top:0,behavior:'smooth'});

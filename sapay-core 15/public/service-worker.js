@@ -1,7 +1,7 @@
 'use strict';
 // Bump CACHE_VERSION on every change to this file. Changing the file is what
 // makes Safari install the new worker; the version names its cache.
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v7';
 const CACHE_NAME = 'sapay-iphone-shell-' + CACHE_VERSION;
 const APP_SHELL = ['/', '/index.html', '/styles.css', '/design-tokens.css', '/app.js', '/runtime-config.js', '/manifest.webmanifest',
   '/icons/sapay-192.svg', '/icons/sapay-512.svg', '/icons/sapay-180.png'];
