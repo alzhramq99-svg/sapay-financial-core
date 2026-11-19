@@ -142,11 +142,10 @@ function renderWallets() {
     <div class="wallet-head"><span class="currency-icon">${escapeHtml(w.currency.slice(0,2))}</span><span class="wallet-currency">${escapeHtml(w.currency)} · محفظة تجريبية</span></div>
     <div class="wallet-balance">${money(w.balanceMinor)} <small>${escapeHtml(w.currency)}</small></div>
     <div class="wallet-id">ID: ${escapeHtml(w.id)}</div>
-    <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل داخلي</button><button class="outline-btn" data-external="${escapeHtml(w.id)}">تحويل خارجي تجريبي</button></div>
+    <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل داخلي</button></div>
   </article>`).join('');
   root.querySelectorAll('[data-credit]').forEach(btn => btn.addEventListener('click', () => openAction('credit', btn.dataset.credit)));
   root.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => openAction('transfer', btn.dataset.send)));
-  root.querySelectorAll('[data-external]').forEach(btn => btn.addEventListener('click', () => openAction('external', btn.dataset.external)));
 }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 async function loadHistory() {
@@ -317,6 +316,7 @@ if (state.token) {
     if(item) toast('تم اختيار '+item.dataset.institution+' — الدفع الجامعي سيضاف في المرحلة التالية.');
     const bank=e.target.closest('[data-demo-bank]');
     if(bank){
+      if(!window.SAPAY_CONFIG?.bankDemoTransfers){toast('التحويل البنكي التجريبي غير مفعّل حالياً.');return;}
       if(!state.wallets.length){toast('أنشئ محفظة أولاً لإجراء تحويل تجريبي.');go('wallets');return;}
       openAction('external',state.wallets[0].id);
       $('externalMode').value='SUDAN_BANK';
