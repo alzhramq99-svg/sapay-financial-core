@@ -42,8 +42,8 @@ const results = []; const check = (name, ok, extra='') => { results.push(`${ok ?
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload(); await page.waitForTimeout(500);
   check('service worker controls page', await page.evaluate(() => Boolean(navigator.serviceWorker.controller)));
-  const cached = await page.evaluate(async () => (await (await caches.open('sapay-iphone-shell-v4')).keys()).map(r => new URL(r.url).pathname));
-  check('shell cached incl. runtime-config and PNG icon', ['/runtime-config.js','/icons/sapay-180.png','/app.js'].every(p => cached.includes(p)), cached.join(','));
+  const cached = await page.evaluate(async () => (await (await caches.open('sapay-iphone-shell-v5')).keys()).map(r => new URL(r.url).pathname));
+  check('shell cached incl. runtime-config and PNG icon', ['/runtime-config.js','/icons/sapay-180.png','/design-tokens.css','/app.js'].every(p => cached.includes(p)), cached.join(','));
   check('health warm-up request sent on open', calls.includes('GET /api/health'));
   check('Face ID button hidden on web', await page.locator('#faceIdLogin').isHidden());
   check('RTL Arabic document', await page.evaluate(() => document.documentElement.dir === 'rtl' && document.documentElement.lang === 'ar'));
