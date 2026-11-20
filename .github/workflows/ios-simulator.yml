@@ -1,0 +1,52 @@
+name: SApay iOS Simulator build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-simulator:
+    runs-on: macos-15
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: 'sapay-core 15/mobile'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: 'sapay-core 15/mobile/package-lock.json'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prepare web assets
+        run: npm run copy:web
+
+      - name: Generate Capacitor iOS project
+        run: npx cap add ios
+
+      - name: Build unsigned iOS Simulator app
+        run: npm run build:ios:simulator
+
+      - name: Verify simulator app
+        run: |
+          APP_PATH="build/DerivedData/Build/Products/Release-iphonesimulator/App.app"
+          test -d "$APP_PATH"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$APP_PATH/Info.plist"
+
+      - name: Upload simulator app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sapay-ios-simulator
+          path: 'sapay-core 15/mobile/build/DerivedData/Build/Products/Release-iphonesimulator/App.app'
+          if-no-files-found: error
+          retention-days: 14
