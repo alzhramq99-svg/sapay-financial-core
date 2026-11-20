@@ -27,23 +27,21 @@ jobs:
         with:
           node-version: 20
 
-      - name: Validate required signing and App Store Connect secrets
+      - name: Validate required signing secrets
         env:
-          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
-          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
-          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: \${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: \${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: \${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_TEAM_ID: \${{ secrets.IOS_TEAM_ID }}
         run: |
-          for name in IOS_DISTRIBUTION_CERTIFICATE_BASE64 IOS_CERTIFICATE_PASSWORD IOS_PROVISIONING_PROFILE_BASE64 IOS_TEAM_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_API_PRIVATE_KEY; do
-            if [ -z "${!name}" ]; then echo "Missing required GitHub Actions secret: $name"; exit 1; fi
+          for name in IOS_DISTRIBUTION_CERTIFICATE_BASE64 IOS_CERTIFICATE_PASSWORD IOS_PROVISIONING_PROFILE_BASE64 IOS_TEAM_ID; do
+            if [ -z "\${!name}" ]; then echo "Missing required GitHub Actions secret: $name"; exit 1; fi
           done
 
       - name: Validate App Store Connect API private key
+        if: \${{ inputs.upload_to_testflight == true }}
         env:
-          APP_STORE_CONNECT_API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
+          APP_STORE_CONNECT_API_PRIVATE_KEY: \${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
         run: |
           printf '%s\n' "$APP_STORE_CONNECT_API_PRIVATE_KEY" > "$RUNNER_TEMP/AuthKey.p8"
           openssl pkey -in "$RUNNER_TEMP/AuthKey.p8" -noout
