@@ -132,7 +132,7 @@
    - `APP_STORE_CONNECT_ISSUER_ID`
    - `APP_STORE_CONNECT_API_KEY_ID`
    - `APP_STORE_CONNECT_API_PRIVATE_KEY`
-5. تشغيل `SApay iOS TestFlight build` يدويًا من تبويب Actions، والتحقق من نجاح جميع الخطوات وظهور artifact باسم `sapay-iphone-ipa` ثم تأكيد ظهور البناء داخل TestFlight.
+5. تشغيل `SApay iOS TestFlight build` يدويًا من تبويب Actions مع تفعيل `upload_to_testflight` (القيمة الافتراضية `false` تُنتج IPA دون رفعه)، ثم الموافقة على مهمة الرفع في بيئة `testflight` إذا كان لها مراجعون مطلوبون، والتحقق من نجاح جميع الخطوات وظهور artifact باسم `sapay-iphone-ipa` ثم تأكيد ظهور البناء داخل TestFlight.
 6. إكمال بيانات الخصوصية والدعم ولقطات شاشة من النسخة الموقعة، ثم دعوة المختبرين بعد اعتماد المالك.
 
 ## ضوابط أمان الإصدار

@@ -4,6 +4,9 @@ import { DatabaseService } from '../src/database/database.service';
 describe('DatabaseService startup', () => {
   let service: DatabaseService;
   const connectionEnvironmentKeys = [
+    // Cleared too: with DB_AUTO_MIGRATE=true in the caller's environment,
+    // startup runs a second query and the query-count assertions fail.
+    'DB_AUTO_MIGRATE',
     'DATABASE_URL',
     'PGHOST',
     'PGPORT',

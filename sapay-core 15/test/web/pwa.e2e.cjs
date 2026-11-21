@@ -8,10 +8,12 @@
 // the update check appends a line to app.js.
 const { chromium, devices } = require('playwright');
 const http = require('http'); const fs = require('fs'); const path = require('path');
-const root = process.argv[2];
+const root = path.resolve(process.argv[2] || 'public');
 const types = { '.html':'text/html; charset=utf-8', '.js':'text/javascript', '.css':'text/css', '.png':'image/png', '.svg':'image/svg+xml', '.webmanifest':'application/manifest+json' };
+let serverErrorPages = false; // when true, the HTML shell answers 503, as a failing host would
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname); if (p === '/') p = '/index.html';
+  if (serverErrorPages && p === '/index.html') { res.writeHead(503, {'content-type':'text/plain'}); return res.end('Service Unavailable'); }
   const f = path.join(root, p);
   if (!f.startsWith(root) || !fs.existsSync(f)) { res.writeHead(404, {'content-type':'text/html'}); return res.end('<h1>404</h1>'); }
   res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream', 'cache-control': 'no-cache' }); fs.createReadStream(f).pipe(res);
@@ -86,6 +88,11 @@ const results = []; const check = (name, ok, extra='') => { results.push(`${ok ?
   await ctx.setOffline(false);
   await page.goto('http://localhost:4173/'); await page.waitForTimeout(300);
   check('API calls stay on the same origin when served from localhost', calls.length > 0 && apiOrigins.size === 1 && apiOrigins.has('http://localhost:4173'), [...apiOrigins].join(','));
+  // a transient 5xx from the host must not replace the installed shell
+  serverErrorPages = true;
+  await page.goto('http://localhost:4173/'); await page.waitForTimeout(300);
+  check('server 503 on launch still opens the cached app shell', await page.locator('#authForm').isVisible());
+  serverErrorPages = false;
   // update: change app.js on server, a reload must serve the new file, not the cached one
   fs.appendFileSync(path.join(root, 'app.js'), '\nwindow.__SAPAY_BUILD = "new";\n');
   await page.reload(); await page.waitForTimeout(500);

@@ -38,6 +38,7 @@
 2. إنشاء App ID وسجل SApay في App Store Connect.
 3. إنشاء شهادة Apple Distribution وملف App Store provisioning profile.
 4. إعداد أسرار GitHub Actions السبعة دون مشاركتها في المحادثة أو المستودع.
-5. تشغيل workflow `SApay iOS TestFlight build` والتحقق من IPA موقع وظهور البناء في TestFlight.
+5. إنشاء بيئة GitHub باسم `testflight` وإضافة مراجعين مطلوبين لها (Settings → Environments).
+6. تشغيل workflow `SApay iOS TestFlight build` مع `upload_to_testflight=true`، ثم الموافقة على مهمة `upload-testflight`، والتحقق من IPA موقع وظهور البناء في TestFlight. بدون هذا الخيار يُنتج الـ workflow ملف IPA فقط دون رفعه.
 
 **حالة Apple:** حتى آخر تحديث، استلام المستندات وفتح الحالة لا يثبتان تفعيل العضوية. لا تكرر الدفع.

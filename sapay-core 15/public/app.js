@@ -32,15 +32,18 @@ async function api(path, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response;
+  let data;
   try {
     response = await fetch(origin + '/api' + path, { ...options, signal: controller.signal, headers: { ...headers(), ...(options.headers || {}) } });
+    // Read the body inside the timeout: fetch resolves on headers, and a
+    // stalled body would otherwise hang past REQUEST_TIMEOUT_MS.
+    data = await response.json().catch((error) => { if (error?.name === 'AbortError') throw error; return {}; });
   } catch (error) {
     if (error?.name === 'AbortError') throw new Error('استغرق خادم SApay وقتًا أطول من المعتاد. قد يكون قيد التشغيل؛ أعد المحاولة بعد لحظات.');
     throw new Error('تعذر الوصول إلى خادم SApay. تحقق من الإنترنت ثم أعد المحاولة.');
   } finally {
     clearTimeout(timer);
   }
-  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 401 && state.token) {
       logout(false);
@@ -131,6 +134,8 @@ $('logoutBtn').addEventListener('click', () => logout());
 async function showDashboard() {
   $('authView').hidden = true; $('appView').hidden = false; $('logoutBtn').hidden = false;
   $('userEmail').textContent = state.user?.email || 'حسابك التجريبي';
+  // The Account page may still be the active page from the previous session.
+  const accountEmail = $('accountEmail'); if (accountEmail) accountEmail.textContent = state.user?.email || 'حسابك التجريبي';
   await refreshData();
 }
 async function refreshData() {

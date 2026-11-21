@@ -51,11 +51,15 @@ jobs:
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: Archive sapay-ios-simulator (tar keeps executable permissions)
+        # upload-artifact does not preserve file permissions, so an App.app
+        # uploaded as a folder loses its executable bit.
+        run: tar -C 'build/DerivedData/Build/Products/Release-iphonesimulator' -cf build/sapay-ios-simulator.tar App.app
       - name: Upload simulator build
         uses: actions/upload-artifact@v4
         with:
           name: sapay-ios-simulator
-          path: 'sapay-core 15/mobile/build/DerivedData/Build/Products/Release-iphonesimulator/App.app'
+          path: 'sapay-core 15/mobile/build/sapay-ios-simulator.tar'
           if-no-files-found: error
           retention-days: 7
       - name: Build unsigned iPhone device app
@@ -69,10 +73,14 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             build
+      - name: Archive sapay-ios-device-unsigned (tar keeps executable permissions)
+        # upload-artifact does not preserve file permissions, so an App.app
+        # uploaded as a folder loses its executable bit.
+        run: tar -C 'build/DeviceDerivedData/Build/Products/Release-iphoneos' -cf build/sapay-ios-device-unsigned.tar App.app
       - name: Upload unsigned iPhone device build
         uses: actions/upload-artifact@v4
         with:
           name: sapay-ios-device-unsigned
-          path: 'sapay-core 15/mobile/build/DeviceDerivedData/Build/Products/Release-iphoneos/App.app'
+          path: 'sapay-core 15/mobile/build/sapay-ios-device-unsigned.tar'
           if-no-files-found: error
           retention-days: 7

@@ -51,10 +51,15 @@ jobs:
           test -s "$APP_PATH/public/index.html"
           test -s "$APP_PATH/public/biometric-bridge.js"
 
+      - name: Archive sapay-ios-simulator (tar keeps executable permissions)
+        # upload-artifact does not preserve file permissions, so an App.app
+        # uploaded as a folder loses its executable bit.
+        run: tar -C 'build/DerivedData/Build/Products/Release-iphonesimulator' -cf build/sapay-ios-simulator.tar App.app
+
       - name: Upload simulator app artifact
         uses: actions/upload-artifact@v4
         with:
           name: sapay-ios-simulator
-          path: 'sapay-core 15/mobile/build/DerivedData/Build/Products/Release-iphonesimulator/App.app'
+          path: 'sapay-core 15/mobile/build/sapay-ios-simulator.tar'
           if-no-files-found: error
           retention-days: 14

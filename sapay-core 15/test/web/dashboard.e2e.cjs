@@ -53,7 +53,7 @@ async function run(orientation, port, results) {
 
   check('no uncaught errors during dashboard setup', errors.length === 0, errors.join(' | '));
   const nav = await page.evaluate(() => [...document.querySelectorAll('.app-nav .nav-item')].map((b) => {
-    const r = b.getBoundingClientRect(); return { page: b.dataset.page, visible: r.width > 0 && r.right > 0 && r.left < innerWidth };
+    const r = b.getBoundingClientRect(); return { page: b.dataset.page, visible: r.width > 0 && r.left >= 0 && r.right <= innerWidth };
   }));
   check('nine navigation items', nav.length === 9, nav.map((n) => n.page).join(','));
   check('all navigation items inside the viewport', nav.length === 9 && nav.every((n) => n.visible), nav.filter((n) => !n.visible).map((n) => n.page).join(','));
