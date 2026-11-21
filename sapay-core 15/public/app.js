@@ -251,19 +251,38 @@ if (state.token) {
   const footer=root.querySelector('.footer-note');
   const nav=document.createElement('nav');
   nav.className='app-nav'; nav.setAttribute('aria-label','التنقل الرئيسي');
-  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['cards','▣','بطاقتي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['support','?','المساعدة'],['account','◎','حسابي'],['settings','⚙','الإعدادات']];
-  definitions.forEach(([key,icon,label],i)=>{
+  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['cards','▣','بطاقتي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['support','?','المساعدة'],['account','◎','حسابي'],['settings','⚙','الإعدادات'],['more','•••','المزيد']];
+  const navDefinitions=[['home','⌂','الرئيسية'],['wallets','▣','المحفظة'],['cards','▤','البطاقات'],['more','•••','المزيد']];
+  navDefinitions.forEach(([key,icon,label],i)=>{
     const button=document.createElement('button'); button.type='button'; button.className='nav-item'+(i===0?' active':'');
     button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
   });
   notice?.after(nav);
   const makePage=(key)=>{const section=document.createElement('section');section.className='page-view'+(key==='home'?' active':'');section.dataset.view=key;section.hidden=key!=='home';section.style.display=key==='home'?'block':'none';section.style.minHeight='1px';return section;};
   const pages={}; definitions.forEach(([key])=>pages[key]=makePage(key));
+  const homeGreeting=document.createElement('div');homeGreeting.className='home-greeting';
+  homeGreeting.innerHTML='<div class="home-avatar" aria-hidden="true">S</div><div class="home-greeting-copy"><span>مرحباً بعودتك</span><strong>أهلاً بك في SApay <span aria-hidden="true">👋</span></strong><i aria-hidden="true"></i></div><span class="home-demo-tag">نسخة تجريبية</span>';
+  pages.home.append(homeGreeting);
   if(balance) pages.home.append(balance);
-  const shortcuts=document.createElement('div');shortcuts.className='home-shortcuts';
-  shortcuts.innerHTML='<button class="shortcut-card" data-go="wallets" type="button"><span>◈</span><b>إدارة المحافظ</b><small>الأرصدة والمحافظ</small></button><button class="shortcut-card" data-go="transfers" type="button"><span>⇄</span><b>تحويل تجريبي</b><small>بين محافظ SApay</small></button><button class="shortcut-card" data-go="services" type="button"><span>▦</span><b>الخدمات</b><small>الفواتير والخدمات السودانية</small></button>';
+  const flagStripe=document.createElement('div');flagStripe.className='sudan-stripe';flagStripe.setAttribute('aria-label','ألوان الهوية السودانية');pages.home.append(flagStripe);
+  const shortcuts=document.createElement('div');shortcuts.className='home-shortcuts home-quick-actions';
+  shortcuts.innerHTML='<button class="shortcut-card" data-go="wallets" type="button"><span>↓</span><b>شحن تجريبي</b><small>داخل المحفظة</small></button><button class="shortcut-card" data-go="services" type="button"><span>⌕</span><b>الخدمات</b><small>الخدمات السودانية</small></button><button class="shortcut-card" data-go="transfers" type="button"><span>➤</span><b>إرسال تجريبي</b><small>بين المحافظ</small></button><button class="shortcut-card" data-go="wallets" type="button"><span>⇄</span><b>تبديل المحافظ</b><small>عرض محافظك</small></button>';
   pages.home.append(shortcuts);
+  const cardPromo=document.createElement('section');cardPromo.className='home-card-promo';
+  cardPromo.innerHTML='<div><span class="promo-eyebrow">SApay Virtual</span><h2>بطاقتك الرقمية التجريبية</h2><p>استكشف تصميم البطاقة الافتراضية ضمن بيئة العرض فقط.</p><button type="button" data-go="cards">استعراض البطاقة</button></div><div class="promo-card-art" aria-hidden="true"><b>S</b><span>SApay</span><i>•••• 4242</i></div>';
+  pages.home.append(cardPromo);
+  const firstSteps=document.createElement('section');firstSteps.className='home-first-steps';
+  firstSteps.innerHTML='<span>ابدأ من هنا</span><h2>اكتشف محفظتك</h2><p>أنشئ محفظتك التجريبية وجرّب التنقل بين خدمات SApay.</p><button type="button" data-go="wallets">عرض المحافظ</button>';
+  pages.home.append(firstSteps);
+  const recent=document.createElement('section');recent.className='home-recent';
+  recent.innerHTML='<div><h2>آخر العمليات</h2><button type="button" data-go="history">عرض السجل ←</button></div><p>تظهر عملياتك التجريبية المسجلة عند فتح سجل العمليات.</p>';
+  pages.home.append(recent);
+  const forecast=document.createElement('section');forecast.className='home-forecast';
+  forecast.innerHTML='<div><span>قريباً</span><h2>التوقعات والتحليلات</h2><p>نعمل على تطوير هذه الميزة. لن نعرض بيانات أو توقعات غير حقيقية.</p></div><b aria-hidden="true">↗</b>';
+  pages.home.append(forecast);
   if(footer) pages.home.append(footer);
+  pages.more.innerHTML=intro('القائمة','المزيد من الخدمات','الوصول إلى بقية أقسام SApay التجريبية.')+
+    '<div class="more-links"><button data-go="transfers" type="button">التحويلات التجريبية <span>←</span></button><button data-go="services" type="button">الخدمات السودانية <span>←</span></button><button data-go="history" type="button">سجل العمليات <span>←</span></button><button data-go="support" type="button">المساعدة والدعم <span>←</span></button><button data-go="account" type="button">حسابي <span>←</span></button><button data-go="settings" type="button">الإعدادات <span>←</span></button></div>';
   // The live wallet list and ledger history keep their own pages, so every
   // navigation item has content. The total balance stays on the home page.
   if(walletHeading) pages.wallets.append(walletHeading);
@@ -401,7 +420,7 @@ if (state.token) {
   pages.home.hidden=false;pages.home.style.display='block';pages.home.classList.add('active');
   if(!pages.home.childElementCount){pages.home.innerHTML=intro('لوحة المحفظة','مرحبًا بك في SApay','تم فتح لوحة التحكم. حدّث الصفحة أو أعد المحاولة لتحميل بيانات المحافظ.');}
   const go=(key)=>{
-    definitions.forEach(([name])=>{const active=name===key;pages[name].classList.toggle('active',active);pages[name].hidden=!active;pages[name].style.display=active?'block':'none';nav.querySelector('[data-page="'+name+'"]').classList.toggle('active',active);});
+    definitions.forEach(([name])=>{const active=name===key;pages[name].classList.toggle('active',active);pages[name].hidden=!active;pages[name].style.display=active?'block':'none';nav.querySelector('[data-page="'+name+'']')?.classList.toggle('active',active);});
     if(key==='history') loadHistory();
     if(key==='account') $('accountEmail').textContent=state.user?.email||'حسابك التجريبي';
     window.scrollTo({top:0,behavior:'smooth'});
