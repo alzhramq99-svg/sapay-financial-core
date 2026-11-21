@@ -37,9 +37,11 @@ describe('dev-server.cjs API proxy', () => {
     await new Promise<void>((resolve) => upstream.close(() => resolve()));
   });
 
-  const post = (origin: string) => new Promise<{ status: number; body: string }>((resolve, reject) => {
-    const req = request({ host: '127.0.0.1', port: devPort, method: 'POST', path: '/api/auth/login',
-      headers: { Origin: origin, 'content-type': 'application/json' } }, (res) => {
+  const post = (origin: string | undefined, host?: string) => new Promise<{ status: number; body: string }>((resolve, reject) => {
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (origin !== undefined) headers.Origin = origin;
+    if (host !== undefined) headers.Host = host;
+    const req = request({ host: '127.0.0.1', port: devPort, method: 'POST', path: '/api/auth/login', headers }, (res) => {
       let body = '';
       res.on('data', (chunk) => { body += chunk; });
       res.on('end', () => resolve({ status: res.statusCode ?? 0, body }));
@@ -65,4 +67,21 @@ describe('dev-server.cjs API proxy', () => {
       expect(JSON.parse(body)).toEqual({ message: 'Origin not allowed' });
       expect(received).toBeUndefined();
     });
+
+  it('forwards a request without Origin sent to a loopback host', async () => {
+    const { status } = await post(undefined);
+    expect(status).toBe(200);
+    expect(received).toBeDefined();
+  });
+
+  // DNS rebinding: the attacker's page resolves to this machine, so the
+  // browser sends the attacker's domain as both Host and Origin.
+  it.each([
+    ['matching Origin and Host', 'http://rebind.example:4173', 'rebind.example:4173'],
+    ['no Origin', undefined, 'rebind.example:4173'],
+  ])('refuses a request whose Host is not this machine (%s)', async (_label, origin, host) => {
+    const { status } = await post(origin, host);
+    expect(status).toBe(403);
+    expect(received).toBeUndefined();
+  });
 });
