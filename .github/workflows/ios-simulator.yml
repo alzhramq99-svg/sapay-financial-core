@@ -21,9 +21,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: 'sapay-core 15/mobile/package-lock.json'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Prepare web assets
         run: npm run copy:web
@@ -34,12 +36,20 @@ jobs:
       - name: Build unsigned iOS Simulator app
         run: npm run build:ios:simulator
 
+      - name: Verify generated iOS project
+        run: node ./scripts/verify-ios-project.mjs
+
       - name: Verify simulator app
         run: |
           APP_PATH="build/DerivedData/Build/Products/Release-iphonesimulator/App.app"
           test -d "$APP_PATH"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist"
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist")
+          echo "CFBundleIdentifier: $BUNDLE_ID"
+          test "$BUNDLE_ID" = "com.saadaligroup.sapay"
           /usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$APP_PATH/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :UIUserInterfaceStyle' "$APP_PATH/Info.plist")" = "Dark"
+          test -s "$APP_PATH/public/index.html"
+          test -s "$APP_PATH/public/biometric-bridge.js"
 
       - name: Upload simulator app artifact
         uses: actions/upload-artifact@v4

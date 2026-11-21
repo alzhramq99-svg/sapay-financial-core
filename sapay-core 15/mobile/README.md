@@ -11,10 +11,11 @@ This folder packages the existing Arabic SApay web interface as an iOS app using
 
 ```bash
 cd "sapay-core 15/mobile"
-npm install
+npm ci
 npm run copy:web
 npx cap add ios
-npx cap sync ios
+npm run cap:sync                       # bridge, Face ID text, dark launch screen
+node ./scripts/verify-ios-project.mjs  # same checks as CI
 ```
 
 The web bundle is copied from `../public`; `runtime-config.js` points to the HTTPS demo API. The generated CocoaPods workspace (`ios/App/App.xcworkspace`) must be used for Xcode builds so the Capacitor framework is linked. API calls and authentication remain served by the existing backend. No secrets or real-money integrations are included in this app shell.
@@ -56,4 +57,4 @@ The workflow does not bypass Apple's enrollment or signing requirements. Until t
 - Demo API only; no real-money transfers or live bank integrations.
 ## Signing preflight safeguards
 
-The cloud TestFlight workflow validates that all seven required GitHub Actions secrets are present before attempting a device build. It also parses the App Store Connect API private key, verifies the imported Apple Distribution identity is usable, and checks that the provisioning profile is unexpired and matches both the expected bundle identifier and Apple Team ID. The mobile package currently has no committed npm lockfile, so the workflow intentionally uses `npm install` rather than `npm ci`.
+The cloud TestFlight workflow has two jobs. `build-signed` checks the four signing secrets, verifies the imported Apple Distribution identity, checks that the provisioning profile is unexpired and matches the bundle identifier `com.saadaligroup.sapay` and the Apple Team ID, then archives and exports the IPA as an artifact. It never uploads. `upload-testflight` runs only when the workflow is started with `upload_to_testflight: true`; it validates the three App Store Connect secrets and uploads that IPA. It runs in the `testflight` GitHub environment: add required reviewers to that environment (Settings → Environments) so every upload also waits for explicit approval. The mobile package has a committed `package-lock.json`, so all iOS workflows install with `npm ci`.

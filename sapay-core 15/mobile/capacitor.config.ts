@@ -7,7 +7,9 @@ const config: CapacitorConfig = {
   bundledWebRuntime: false,
   ios: {
     contentInset: 'automatic',
-    backgroundColor: '#f4f7f9',
+    // Matches the dark SApay identity and scripts/configure-ios-appearance.mjs,
+    // so no light area shows behind the WebView during launch or overscroll.
+    backgroundColor: '#0A0A0A',
     preferredContentMode: 'mobile',
   },
 };
