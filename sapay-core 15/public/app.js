@@ -281,7 +281,7 @@ if (state.token) {
   forecast.innerHTML='<div><span>قريباً</span><h2>التوقعات والتحليلات</h2><p>نعمل على تطوير هذه الميزة. لن نعرض بيانات أو توقعات غير حقيقية.</p></div><b aria-hidden="true">↗</b>';
   pages.home.append(forecast);
   if(footer) pages.home.append(footer);
-  pages.more.innerHTML=intro('القائمة','المزيد من الخدمات','الوصول إلى بقية أقسام SApay التجريبية.')+
+  pages.more.innerHTML='<div class="page-intro"><div class="eyebrow">القائمة</div><h2>المزيد من الخدمات</h2><p>الوصول إلى بقية أقسام SApay التجريبية.</p></div>'+
     '<div class="more-links"><button data-go="transfers" type="button">التحويلات التجريبية <span>←</span></button><button data-go="services" type="button">الخدمات السودانية <span>←</span></button><button data-go="history" type="button">سجل العمليات <span>←</span></button><button data-go="support" type="button">المساعدة والدعم <span>←</span></button><button data-go="account" type="button">حسابي <span>←</span></button><button data-go="settings" type="button">الإعدادات <span>←</span></button></div>';
   // The live wallet list and ledger history keep their own pages, so every
   // navigation item has content. The total balance stays on the home page.
@@ -420,13 +420,13 @@ if (state.token) {
   pages.home.hidden=false;pages.home.style.display='block';pages.home.classList.add('active');
   if(!pages.home.childElementCount){pages.home.innerHTML=intro('لوحة المحفظة','مرحبًا بك في SApay','تم فتح لوحة التحكم. حدّث الصفحة أو أعد المحاولة لتحميل بيانات المحافظ.');}
   const go=(key)=>{
-    definitions.forEach(([name])=>{const active=name===key;pages[name].classList.toggle('active',active);pages[name].hidden=!active;pages[name].style.display=active?'block':'none';nav.querySelector('[data-page="'+name+'']')?.classList.toggle('active',active);});
+    definitions.forEach(([name])=>{const active=name===key;pages[name].classList.toggle('active',active);pages[name].hidden=!active;pages[name].style.display=active?'block':'none';nav.querySelector('[data-page="'+name+'"]')?.classList.toggle('active',active);});
     if(key==='history') loadHistory();
     if(key==='account') $('accountEmail').textContent=state.user?.email||'حسابك التجريبي';
     window.scrollTo({top:0,behavior:'smooth'});
   };
   nav.addEventListener('click',e=>{const button=e.target.closest('[data-page]');if(button)go(button.dataset.page);});
-  shortcuts.addEventListener('click',e=>{const button=e.target.closest('[data-go]');if(button)go(button.dataset.go);});
+  root.addEventListener('click',e=>{const button=e.target.closest('[data-go]');if(button && root.contains(button))go(button.dataset.go);});
   pages.transfers.addEventListener('click',e=>{const button=e.target.closest('[data-go]');if(button)go(button.dataset.go);});
   $('startTransferBtn').addEventListener('click',()=>{
     if(!state.wallets.length){toast('أنشئ محفظة أولًا للبدء.');go('wallets');return;}
