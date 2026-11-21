@@ -22,7 +22,7 @@ The web bundle is copied from `../public`; `runtime-config.js` points to the HTT
 
 ## Cloud build and TestFlight
 
-The workflow is `.github/workflows/ios-testflight.yml` and is manually dispatched from GitHub Actions. It runs on a GitHub-hosted macOS runner, generates the Capacitor iOS project, archives and exports an App Store IPA, stores the IPA as a short-lived workflow artifact, and uploads it to TestFlight.
+The workflow is `.github/workflows/ios-testflight.yml` and is manually dispatched from GitHub Actions. It runs on a GitHub-hosted macOS runner, generates the Capacitor iOS project, archives and exports an App Store IPA and stores it as a short-lived workflow artifact. It uploads to TestFlight only when started with `upload_to_testflight: true`, in a separate job that waits for approval on the `testflight` environment (see below).
 
 Before running the workflow, configure these GitHub Actions repository secrets:
 

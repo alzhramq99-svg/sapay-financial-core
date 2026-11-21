@@ -1,9 +1,9 @@
 'use strict';
 // Bump CACHE_VERSION on every change to this file. Changing the file is what
 // makes Safari install the new worker; the version names its cache.
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CACHE_NAME = 'sapay-iphone-shell-' + CACHE_VERSION;
-const APP_SHELL = ['/', '/index.html', '/styles.css', '/design-tokens.css', '/app.js', '/runtime-config.js', '/manifest.webmanifest',
+const APP_SHELL = ['/', '/index.html', '/styles.css', '/design-tokens.css', '/app.js', '/sw-register.js', '/runtime-config.js', '/manifest.webmanifest',
   '/icons/sapay-192.svg', '/icons/sapay-512.svg', '/icons/sapay-180.png', '/privacy.html', '/support.html'];
 // On a weak connection, wait this long for the network before using the cache.
 const NETWORK_TIMEOUT_MS = 5000;

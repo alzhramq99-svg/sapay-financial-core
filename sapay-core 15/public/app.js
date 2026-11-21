@@ -26,11 +26,14 @@ function apiOrigin() {
 // failure mode to a clear Arabic message instead.
 async function api(path, options = {}) {
   if (navigator.onLine === false) throw new Error('لا يوجد اتصال بالإنترنت. تحقق من الشبكة ثم أعد المحاولة.');
+  // Resolve outside the try: a missing or invalid API configuration has its
+  // own message and must not be reported as a network failure.
+  const origin = apiOrigin();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response;
   try {
-    response = await fetch(apiOrigin() + '/api' + path, { ...options, signal: controller.signal, headers: { ...headers(), ...(options.headers || {}) } });
+    response = await fetch(origin + '/api' + path, { ...options, signal: controller.signal, headers: { ...headers(), ...(options.headers || {}) } });
   } catch (error) {
     if (error?.name === 'AbortError') throw new Error('استغرق خادم SApay وقتًا أطول من المعتاد. قد يكون قيد التشغيل؛ أعد المحاولة بعد لحظات.');
     throw new Error('تعذر الوصول إلى خادم SApay. تحقق من الإنترنت ثم أعد المحاولة.');
