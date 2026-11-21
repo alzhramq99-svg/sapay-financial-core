@@ -20,7 +20,16 @@ const server = http.createServer((req, res) => {
     // is same-origin from its point of view. Drop Origin before proxying: the
     // API's CORS allowlist covers deployed origins only and would reject the
     // loopback origin of this local proxy.
-    const { origin: _origin, ...forwardHeaders } = req.headers;
+    // Only a page served by this dev server may use the proxy: a page on any
+    // other site could otherwise send a simple cross-origin POST through it
+    // with its Origin removed. A request without Origin (curl, tests) is kept.
+    const { origin, ...forwardHeaders } = req.headers;
+    if (origin !== undefined && origin !== `http://${req.headers.host}`) {
+      res.writeHead(403, {'content-type':'application/json'});
+      res.end(JSON.stringify({message:'Origin not allowed'}));
+      req.resume();
+      return;
+    }
     const proxyReq = apiClient.request(target, { method:req.method, headers:{...forwardHeaders, host:apiTargetUrl.host} }, proxyRes => {
       res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
       pipeline(proxyRes, res, () => {});

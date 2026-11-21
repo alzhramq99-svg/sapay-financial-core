@@ -5,7 +5,8 @@ import { join } from 'path';
 
 // dev-server.cjs proxies /api to the local API. The browser treats the proxy
 // as the page's own origin, so the proxy must drop Origin: the API's CORS
-// allowlist rejects loopback origins by design. Ephemeral ports keep this
+// allowlist rejects loopback origins by design. It must also refuse any other
+// origin, which would otherwise reach the API with its Origin removed. Ephemeral ports keep this
 // test from colliding with a dev server or API already running on 4173/3000.
 const freePort = () => new Promise<number>((resolve) => {
   const probe = createServer().listen(0, '127.0.0.1', () => {
@@ -36,16 +37,32 @@ describe('dev-server.cjs API proxy', () => {
     await new Promise<void>((resolve) => upstream.close(() => resolve()));
   });
 
-  it('forwards a same-origin POST without the Origin header', async () => {
-    const status = await new Promise<number>((resolve, reject) => {
-      const req = request({ host: '127.0.0.1', port: devPort, method: 'POST', path: '/api/auth/login',
-        headers: { Origin: `http://localhost:${devPort}`, 'content-type': 'application/json' } }, (res) => { res.resume(); resolve(res.statusCode ?? 0); });
-      req.on('error', reject);
-      req.end('{}');
+  const post = (origin: string) => new Promise<{ status: number; body: string }>((resolve, reject) => {
+    const req = request({ host: '127.0.0.1', port: devPort, method: 'POST', path: '/api/auth/login',
+      headers: { Origin: origin, 'content-type': 'application/json' } }, (res) => {
+      let body = '';
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, body }));
     });
+    req.on('error', reject);
+    req.end('{}');
+  });
+
+  beforeEach(() => { received = undefined; });
+
+  it('forwards a same-origin POST without the Origin header', async () => {
+    const { status } = await post(`http://127.0.0.1:${devPort}`);
     expect(status).toBe(200);
     expect(received).toBeDefined();
     expect(received?.origin).toBeUndefined();
     expect(received?.['content-type']).toBe('application/json');
   });
+
+  it.each(['https://evil.example', 'http://127.0.0.1:1', 'null'])(
+    'refuses a POST from another origin (%s) without contacting the API', async (origin) => {
+      const { status, body } = await post(origin);
+      expect(status).toBe(403);
+      expect(JSON.parse(body)).toEqual({ message: 'Origin not allowed' });
+      expect(received).toBeUndefined();
+    });
 });
