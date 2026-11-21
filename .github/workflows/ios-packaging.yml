@@ -15,6 +15,10 @@ on:
       - 'sapay-core 15/public/**'
       - '.github/workflows/ios-packaging.yml'
 
+# Checkout and artifact upload need no more than read access to the repository.
+permissions:
+  contents: read
+
 jobs:
   ios-simulator:
     runs-on: macos-15
