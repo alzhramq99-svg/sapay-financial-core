@@ -9,7 +9,12 @@ const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=ut
 const server = http.createServer((req, res) => {
   if (req.url === '/api' || req.url.startsWith('/api/')) {
     const target = new URL(req.url, apiTarget);
-    const proxyReq = http.request(target, { method:req.method, headers:{...req.headers, host:'127.0.0.1:3000'} }, proxyRes => {
+    // The browser treats this server as the page's own origin, so the request
+    // is same-origin from its point of view. Drop Origin before proxying: the
+    // API's CORS allowlist covers deployed origins only and would reject the
+    // loopback origin of this local proxy.
+    const { origin: _origin, ...forwardHeaders } = req.headers;
+    const proxyReq = http.request(target, { method:req.method, headers:{...forwardHeaders, host:'127.0.0.1:3000'} }, proxyRes => {
       res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
       pipeline(proxyRes, res, () => {});
     });

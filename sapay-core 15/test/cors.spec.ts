@@ -1,11 +1,28 @@
 import { AddressInfo } from 'net';
 import { request, Server } from 'http';
-import { INestApplication, Module } from '@nestjs/common';
+import { Controller, HttpCode, INestApplication, Module, Post } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { corsOptions, isAllowedOrigin } from '../src/security/cors';
 
-@Module({})
+let loginCalls = 0;
+@Controller('api/auth')
+class LoginProbeController {
+  @Post('login') @HttpCode(200) login() { loginCalls += 1; return { ok: true }; }
+}
+
+@Module({ controllers: [LoginProbeController] })
 class EmptyModule {}
+
+// A real POST, as browsers send it (Origin included even when same-origin).
+function post(server: Server, origin: string): Promise<number> {
+  const { port } = server.address() as AddressInfo;
+  return new Promise((resolve, reject) => {
+    const req = request({ host: '127.0.0.1', port, method: 'POST', path: '/api/auth/login', headers: { Origin: origin, 'content-type': 'application/json' } },
+      (res) => { res.resume(); resolve(res.statusCode ?? 0); });
+    req.on('error', reject);
+    req.end('{}');
+  });
+}
 
 // Preflight through Nest's real enableCors, configured exactly as in main.ts.
 function preflight(server: Server, origin: string): Promise<{ status: number; allowOrigin?: string }> {
@@ -42,6 +59,18 @@ describe('CORS policy', () => {
   it('accepts the Render service origin, which also serves the web UI', async () => {
     const origin = 'https://sapay-api.onrender.com';
     expect((await preflight(server, origin)).allowOrigin).toBe(origin);
+  });
+
+  it('lets a POST from the Render-served UI reach the controller', async () => {
+    loginCalls = 0;
+    expect(await post(server, 'https://sapay-api.onrender.com')).toBe(200);
+    expect(loginCalls).toBe(1);
+  });
+
+  it.each(['https://evil.example', 'http://localhost:4173'])('stops a POST from %s before the controller', async (origin) => {
+    loginCalls = 0;
+    expect(await post(server, origin)).not.toBe(200);
+    expect(loginCalls).toBe(0);
   });
 
   it('accepts a Vercel preview origin of this project', async () => {
