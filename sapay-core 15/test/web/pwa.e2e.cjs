@@ -19,13 +19,15 @@ const server = http.createServer((req, res) => {
   const f = path.join(root, p);
   if (!f.startsWith(root) || !fs.existsSync(f)) { res.writeHead(404, {'content-type':'text/html'}); return res.end('<h1>404</h1>'); }
   res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream', 'cache-control': 'no-cache' }); fs.createReadStream(f).pipe(res);
-}).listen(4173);
+}).listen(0); // ephemeral port: never collides with a running dev server
 // Served from localhost, the app calls its own origin's /api (see apiOrigin in app.js).
-const API = 'http://localhost:4173/api';
+let ORIGIN; let API; // set once the server has its port
 // Read the cache name from the worker itself so a version bump cannot leave this test stale.
 const CACHE_NAME = 'sapay-iphone-shell-' + fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8').match(/CACHE_VERSION = '([^']+)'/)[1];
 const results = []; const check = (name, ok, extra='') => { results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? ' — ' + extra : ''}`); };
 (async () => {
+  if (!server.listening) await new Promise((r) => server.once('listening', r));
+  ORIGIN = 'http://localhost:' + server.address().port; API = ORIGIN + '/api';
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'allow' });
   let apiMode = 'ok'; const calls = []; const apiOrigins = new Set();
@@ -45,7 +47,7 @@ const results = []; const check = (name, ok, extra='') => { results.push(`${ok ?
     return json(404, { message: 'Cannot ' + route.request().method() + ' ' + u.pathname });
   });
   const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto('http://localhost:4173/');
+  await page.goto(ORIGIN + '/');
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload(); await page.waitForTimeout(500);
   check('service worker controls page', await page.evaluate(() => Boolean(navigator.serviceWorker.controller)));
@@ -80,19 +82,19 @@ const results = []; const check = (name, ok, extra='') => { results.push(`${ok ?
   msg = await page.textContent('#authMessage'); check('offline login shows no-internet message', msg.includes('لا يوجد اتصال'), msg);
   await ctx.setOffline(false);
   // privacy/support pages must not replace the cached app shell (#26 review)
-  await page.goto('http://localhost:4173/privacy.html'); await page.waitForTimeout(300);
-  await page.goto('http://localhost:4173/support.html'); await page.waitForTimeout(300);
+  await page.goto(ORIGIN + '/privacy.html'); await page.waitForTimeout(300);
+  await page.goto(ORIGIN + '/support.html'); await page.waitForTimeout(300);
   await ctx.setOffline(true);
-  await page.goto('http://localhost:4173/'); await page.waitForTimeout(300);
+  await page.goto(ORIGIN + '/'); await page.waitForTimeout(300);
   check('offline launch after visiting privacy/support still opens the app shell', await page.locator('#authForm').isVisible());
-  await page.goto('http://localhost:4173/privacy.html'); await page.waitForTimeout(300);
+  await page.goto(ORIGIN + '/privacy.html'); await page.waitForTimeout(300);
   check('privacy page available offline', (await page.title()).includes('الخصوصية'), await page.title());
   await ctx.setOffline(false);
-  await page.goto('http://localhost:4173/'); await page.waitForTimeout(300);
-  check('API calls stay on the same origin when served from localhost', calls.length > 0 && apiOrigins.size === 1 && apiOrigins.has('http://localhost:4173'), [...apiOrigins].join(','));
+  await page.goto(ORIGIN + '/'); await page.waitForTimeout(300);
+  check('API calls stay on the same origin when served from localhost', calls.length > 0 && apiOrigins.size === 1 && apiOrigins.has(ORIGIN), [...apiOrigins].join(','));
   // a transient 5xx from the host must not replace the installed shell
   serverErrorPages = true;
-  await page.goto('http://localhost:4173/'); await page.waitForTimeout(300);
+  await page.goto(ORIGIN + '/'); await page.waitForTimeout(300);
   check('server 503 on launch still opens the cached app shell', await page.locator('#authForm').isVisible());
   serverErrorPages = false;
   // update: change app.js on server, a reload must serve the new file, not the cached one
