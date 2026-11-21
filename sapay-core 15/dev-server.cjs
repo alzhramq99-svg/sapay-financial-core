@@ -1,11 +1,16 @@
 'use strict';
 const http = require('node:http');
+const https = require('node:https');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pipeline } = require('node:stream');
 const root = path.join(__dirname, 'public');
 // Overridable so tests (and a second local checkout) can use other ports.
 const apiTarget = process.env.SAPAY_API_TARGET || 'http://127.0.0.1:3000';
+const apiTargetUrl = new URL(apiTarget);
+const apiClients = { 'http:': http, 'https:': https };
+const apiClient = apiClients[apiTargetUrl.protocol];
+if (!apiClient) throw new Error(`SAPAY_API_TARGET must be an http: or https: URL, got ${apiTargetUrl.protocol}`);
 const port = Number(process.env.SAPAY_DEV_PORT || 4173);
 const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.svg':'image/svg+xml' };
 const server = http.createServer((req, res) => {
@@ -16,7 +21,7 @@ const server = http.createServer((req, res) => {
     // API's CORS allowlist covers deployed origins only and would reject the
     // loopback origin of this local proxy.
     const { origin: _origin, ...forwardHeaders } = req.headers;
-    const proxyReq = http.request(target, { method:req.method, headers:{...forwardHeaders, host:new URL(apiTarget).host} }, proxyRes => {
+    const proxyReq = apiClient.request(target, { method:req.method, headers:{...forwardHeaders, host:apiTargetUrl.host} }, proxyRes => {
       res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
       pipeline(proxyRes, res, () => {});
     });
