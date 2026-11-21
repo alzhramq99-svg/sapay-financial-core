@@ -119,3 +119,66 @@ input::placeholder{color:#777166}input:focus,select:focus{border-color:#d6b66b;b
   .institution-chip{width:100%;min-width:0;min-height:44px;border-radius:12px;text-align:start;overflow-wrap:anywhere;}
 }
 @media(max-width:380px){.institution-chips{grid-template-columns:1fr;}}
+
+
+/* Approved SApay iPhone dashboard direction: warm ivory canvas, obsidian
+   balance card, Sudanese identity stripe, compact quick actions and bottom nav. */
+#appView{--home-ink:#0a0a0a;--home-gold:#d4af37;--home-red:#d41436;--home-cream:#fff8f1;color:var(--home-ink)}
+#appView .page-view{max-width:760px;margin-inline:auto}
+#appView .page-view[data-view="home"]{padding:8px 0 24px}
+#appView .home-greeting{display:flex;align-items:center;gap:13px;margin:4px 0 22px;padding:8px 2px}
+#appView .home-avatar{width:54px;height:54px;flex:0 0 54px;display:grid;place-items:center;border:2px solid var(--home-gold);border-radius:50%;background:#090909;color:#f4c928;font-size:25px;font-weight:900;box-shadow:0 5px 14px #0002}
+#appView .home-greeting-copy{display:grid;gap:2px;min-width:0}
+#appView .home-greeting-copy>span{font-size:13px;color:#8d8986}
+#appView .home-greeting-copy strong{font-size:clamp(18px,5vw,24px);color:#111;line-height:1.3}
+#appView .home-greeting-copy i{display:block;width:120px;height:5px;margin-top:5px;border-radius:8px;background:linear-gradient(to bottom,#d41436 0 33%,#fff 33% 66%,#090909 66%)}
+#appView .home-demo-tag{margin-inline-start:auto;padding:6px 9px;border:1px solid #d4af3780;border-radius:20px;color:#6d5718;font-size:10px;white-space:nowrap}
+#appView .page-view[data-view="home"] .balance-card{position:relative;overflow:hidden;margin:0;padding:23px 20px 20px;border:1px solid #b9952d;border-radius:26px;background:repeating-linear-gradient(115deg,transparent 0 31px,#d4af3710 32px 34px),linear-gradient(140deg,#090909,#17120e);color:#fff;box-shadow:0 18px 34px #2c1d1424}
+#appView .page-view[data-view="home"] .balance-top{color:#e9e1d4}
+#appView .page-view[data-view="home"] .total-balance{color:#f6c928;font-size:clamp(32px,9vw,48px);font-weight:850;letter-spacing:-1px;line-height:1.25;overflow-wrap:anywhere}
+#appView .page-view[data-view="home"] .balance-foot{color:#c8c0b5;font-size:11px}
+#appView .sudan-stripe{height:8px;margin:14px 0 21px;border-radius:10px;background:linear-gradient(to bottom,#d41436 0 33%,#fff 33% 66%,#080808 66%);position:relative;overflow:hidden;box-shadow:0 4px 9px #0002}
+#appView .sudan-stripe:before{content:"";position:absolute;inset:0 auto 0 0;width:19%;background:#087b43;clip-path:polygon(0 0,100% 50%,0 100%)}
+#appView .home-quick-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:0 0 22px}
+#appView .home-quick-actions .shortcut-card{min-width:0;min-height:98px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:12px 5px;border:1px solid #f0e8e1;border-radius:20px;background:#fff;color:#111;box-shadow:0 7px 20px #4c35200a}
+#appView .home-quick-actions .shortcut-card>span{font-size:25px;line-height:1;color:#111}
+#appView .home-quick-actions .shortcut-card b{font-size:11px;text-align:center}
+#appView .home-quick-actions .shortcut-card small{font-size:9px;color:#8b8580;text-align:center}
+#appView .home-card-promo{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;padding:20px 18px;border-radius:25px;background:#ffe4d8;color:#111}
+#appView .home-card-promo>div:first-child{min-width:0}
+#appView .promo-eyebrow{color:#b51132;font-size:10px;font-weight:800;letter-spacing:.5px}
+#appView .home-card-promo h2{margin:5px 0 7px;font-size:19px;line-height:1.3}
+#appView .home-card-promo p{margin:0 0 12px;color:#76645e;font-size:12px;line-height:1.7}
+#appView .home-card-promo button,#appView .home-first-steps button{min-height:40px;padding:8px 15px;border:1.5px solid #c91537;border-radius:30px;background:transparent;color:#bf1234;font-weight:800}
+#appView .promo-card-art{width:112px;height:78px;flex:0 0 112px;display:grid;grid-template-columns:32px 1fr;align-content:space-between;align-items:center;padding:12px;border:1px solid #d4af37;border-radius:15px;background:#080808;color:#f5d34c;box-shadow:0 10px 18px #0002}
+#appView .promo-card-art b{width:27px;height:27px;display:grid;place-items:center;border:1px solid #d4af37;border-radius:50%}
+#appView .promo-card-art span{font-size:10px;color:#fff}
+#appView .promo-card-art i{grid-column:1/-1;font-size:10px;letter-spacing:2px;font-style:normal;color:#eee}
+#appView .home-first-steps{margin:0 0 20px;padding:19px;border:1px solid #f3d8cd;border-radius:25px;background:#fffdfa}
+#appView .home-first-steps>span{display:inline-block;padding:5px 11px;border-radius:20px;background:#c91537;color:white;font-size:10px;font-weight:800}
+#appView .home-first-steps h2{margin:11px 0 5px;font-size:21px;color:#111}
+#appView .home-first-steps p{margin:0 0 12px;color:#756d68;font-size:12px;line-height:1.7}
+#appView .home-recent{margin:0 0 18px}
+#appView .home-recent>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#appView .home-recent h2{font-size:18px;color:#111}
+#appView .home-recent>div button{border:0;background:none;color:#bf1234;font-weight:700}
+#appView .home-recent>p{padding:14px;border-radius:16px;background:#fff;color:#827a74;font-size:12px}
+#appView .home-forecast{display:flex;align-items:center;justify-content:space-between;margin:0 0 18px;padding:19px;border:1px solid #b9952d;border-radius:22px;background:#090909;color:white}
+#appView .home-forecast span{color:#f3ca35;font-size:10px;font-weight:800}
+#appView .home-forecast h2{margin:5px 0;font-size:17px}
+#appView .home-forecast p{margin:0;color:#bbb;font-size:11px;line-height:1.7}
+#appView .home-forecast>b{font-size:28px;color:#f3ca35}
+#appView .app-nav{position:sticky;bottom:max(8px,env(safe-area-inset-bottom));z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:18px auto 8px;padding:8px;border:1px solid #eee7e1;border-radius:34px;background:#ffffffed;box-shadow:0 8px 28px #0002;backdrop-filter:blur(16px)}
+#appView .app-nav .nav-item{min-width:0;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px 2px;border:0;border-radius:28px;background:transparent;color:#858585;font-size:10px;font-weight:700}
+#appView .app-nav .nav-item>span{font-size:20px;line-height:1}
+#appView .app-nav .nav-item.active{background:#080808;color:#f4ca24}
+#appView .more-links{display:grid;gap:9px}
+#appView .more-links button{display:flex;justify-content:space-between;align-items:center;min-height:52px;padding:12px 15px;border:1px solid #eee5dc;border-radius:15px;background:#fff;color:#151515;text-align:start}
+@media(max-width:390px){
+ #appView .home-greeting{gap:9px}
+ #appView .home-avatar{width:46px;height:46px;flex-basis:46px}
+ #appView .home-demo-tag{font-size:9px;padding:5px 7px}
+ #appView .home-quick-actions{gap:6px}
+ #appView .home-quick-actions .shortcut-card{min-height:88px}
+ #appView .promo-card-art{width:92px;flex-basis:92px;height:72px}
+}
