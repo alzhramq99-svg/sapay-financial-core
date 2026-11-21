@@ -4,6 +4,10 @@ const allowedOrigins = new Set([
   'https://sapay-financial-core.vercel.app',
   'https://sapay-financial-core-saad-ali5.vercel.app',
   'https://sapay-financial-core-git-main-saad-ali5.vercel.app',
+  // The Render service (render.yaml, service sapay-api) also serves public/.
+  // Browsers send Origin on same-origin POSTs, so without this entry login
+  // and every write from the Render-served UI were rejected with a 500.
+  'https://sapay-api.onrender.com',
   // The iOS app: Capacitor serves its bundled web assets from this origin
   // (mobile/capacitor.config.ts sets no server.url or iosScheme override).
   'capacitor://localhost',

@@ -39,12 +39,17 @@ describe('CORS policy', () => {
     expect(result.allowOrigin).toBe('capacitor://localhost');
   });
 
+  it('accepts the Render service origin, which also serves the web UI', async () => {
+    const origin = 'https://sapay-api.onrender.com';
+    expect((await preflight(server, origin)).allowOrigin).toBe(origin);
+  });
+
   it('accepts a Vercel preview origin of this project', async () => {
     const origin = 'https://sapay-financial-core-hzd2266ux-saad-ali5.vercel.app';
     expect((await preflight(server, origin)).allowOrigin).toBe(origin);
   });
 
-  it.each(['https://evil.example', 'capacitor://evil', 'http://localhost', 'https://sapay-financial-core-x-other.vercel.app'])(
+  it.each(['https://evil.example', 'capacitor://evil', 'http://localhost', 'https://sapay-financial-core-x-other.vercel.app', 'https://sapay-api.onrender.com.evil.example'])(
     'rejects %s without an allow-origin header', async (origin) => {
       const result = await preflight(server, origin);
       expect(result.allowOrigin).toBeUndefined();
