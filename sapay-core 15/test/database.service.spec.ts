@@ -4,6 +4,9 @@ import { DatabaseService } from '../src/database/database.service';
 describe('DatabaseService startup', () => {
   let service: DatabaseService;
   const connectionEnvironmentKeys = [
+    // Cleared too: with DB_AUTO_MIGRATE=true in the caller's environment,
+    // startup runs a second query and the query-count assertions fail.
+    'DB_AUTO_MIGRATE',
     'DATABASE_URL',
     'PGHOST',
     'PGPORT',
@@ -86,6 +89,20 @@ describe('DatabaseService startup', () => {
       'DATABASE_URL must not override its target through query parameters.',
     );
     expect(query).not.toHaveBeenCalled();
+  });
+
+  it.each(['', '   '])('fails at startup when DATABASE_URL is set but blank (%j)', async (value) => {
+    process.env.DATABASE_URL = value;
+    const query = jest.spyOn(Pool.prototype, 'query');
+
+    await expect(service.onModuleInit()).rejects.toThrow('DATABASE_URL must not be empty.');
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('starts without a database when no connection settings are present at all', async () => {
+    delete process.env.DATABASE_URL;
+
+    await expect(service.onModuleInit()).resolves.toBeUndefined();
   });
 
   it('uses a complete DATABASE_URL when PG* settings are incomplete', async () => {

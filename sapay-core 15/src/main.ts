@@ -1,15 +1,19 @@
 import 'dotenv/config';
 import 'reflect-metadata';
-import { json } from 'express';
+import { json, static as serveStatic } from 'express';
+import { join } from 'path';
 const helmet = require('helmet') as () => (req: any, res: any, next: (error?: Error) => void) => void;
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { corsOptions } from './security/cors';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   app.setGlobalPrefix('api');
+  app.enableCors(corsOptions);
   app.use(helmet());
   app.use(json({ limit: '32kb' }));
+  app.use(serveStatic(join(process.cwd(), 'public'), { index: 'index.html', dotfiles: 'deny' }));
   app.enableShutdownHooks();
   const port = Number(process.env.PORT ?? 3000);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {

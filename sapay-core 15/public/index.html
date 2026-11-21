@@ -3,11 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#102a43">
+  <meta name="theme-color" content="#090a0c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SApay">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/sapay-180.png">
   <meta name="description" content="SApay — نموذج محفظة رقمية تجريبي للسودان">
-  <title>SApay | محفظتك الرقمية</title>
+  <title>SApay | محفظتك الرقمية التجريبية</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/design-tokens.css">
+  <script src="/runtime-config.js"></script>
+  <script src="/biometric-bridge.js"></script>
   <script src="/app.js" defer></script>
+  <script src="/sw-register.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -18,9 +29,9 @@
   <main class="shell">
     <section id="authView" class="auth-layout">
       <div class="intro">
-        <div class="eyebrow">محفظتك، أقرب إليك</div>
-        <h1>أموالك التجريبية<br><span>في مكان واحد.</span></h1>
-        <p>جرّب تجربة محفظة SApay: أنشئ حسابًا، افتح محفظة، وتدرّب على التحويل بين المحافظ بأمان — دون أموال حقيقية.</p>
+        <div class="eyebrow">من السودان، إلى العالم</div>
+        <h1>هوية سودانية<br><span>بمعايير عالمية.</span></h1>
+        <p>اكتشف تجربة SApay الرقمية التجريبية: واجهة مالية عصرية مستوحاة من السودان، صُممت للهاتف أولًا. جميع الأرصدة والتحويلات افتراضية ولا تتضمن أموالًا حقيقية.</p>
         <div class="feature-line"><span>✓</span> حساب شخصي ومحافظ مرتبطة بك</div>
         <div class="feature-line"><span>✓</span> سجل عمليات محفوظ في قاعدة البيانات</div>
         <div class="feature-line"><span>✓</span> تجربة مصممة للهاتف أولًا</div>
@@ -33,6 +44,8 @@
           <label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com">
           <label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required minlength="12" maxlength="128" placeholder="12 حرفًا على الأقل">
           <button class="primary full" id="authSubmit" type="submit">دخول آمن</button>
+          <button class="biometric-login" id="faceIdLogin" type="button" hidden><span aria-hidden="true">◉</span> تسجيل الدخول باستخدام Face ID</button>
+          <p id="biometricMessage" class="form-message" role="status" aria-live="polite"></p>
           <p id="authMessage" class="form-message" role="status" aria-live="polite"></p>
         </form>
       </section>
@@ -51,7 +64,7 @@
 
       <div class="section-heading history-heading"><div><div class="eyebrow">آخر النشاطات</div><h2>سجل العمليات</h2></div><button id="refreshBtn" class="subtle-btn">تحديث ↻</button></div>
       <section id="history" class="panel history-list"><p class="muted">جارٍ تحميل السجل…</p></section>
-      <p class="footer-note">SApay Demo · لا تمثل هذه النسخة ترخيصًا ماليًا أو خدمة دفع فعلية.</p>
+      <p class="footer-note">SApay Demo · لا تمثل هذه النسخة ترخيصًا ماليًا أو خدمة دفع فعلية. <a href="/privacy.html">سياسة الخصوصية</a> · <a href="/support.html">الدعم</a></p>
     </section>
   </main>
 
@@ -64,8 +77,16 @@
     <form method="dialog" class="dialog-head"><h2 id="actionTitle">عملية تجريبية</h2><button class="close-btn" aria-label="إغلاق">×</button></form>
     <form id="actionForm">
       <input id="actionType" type="hidden">
+      <div id="externalModeWrap" hidden><label for="externalMode">نوع التحويل الخارجي</label><select id="externalMode"><option value="SUDAN_BANK">إلى بنك سوداني (تجريبي)</option><option value="GLOBAL">تحويل دولي (تجريبي)</option></select></div>
+      <div id="externalFields" hidden>
+        <label for="externalProvider">البنك أو جهة التحويل</label><input id="externalProvider" maxlength="100" placeholder="مثال: بنك الخرطوم التجريبي">
+        <label for="externalBeneficiary">اسم المستفيد التجريبي</label><input id="externalBeneficiary" maxlength="120" placeholder="مستفيد تجريبي">
+        <label for="externalReference">مرجع مستفيد وهمي</label><input id="externalReference" maxlength="64" placeholder="DEMO-TEST-0001">
+        <div id="externalCountryWrap" hidden><label for="externalCountry">الدولة</label><input id="externalCountry" maxlength="80" placeholder="مثال: مصر"></div>
+        <p class="muted small">استخدم بيانات وهمية فقط. لن يتم إرسال أي أموال أو الاتصال ببنك أو شركة تحويل.</p>
+      </div>
       <label for="sourceWallet">المحفظة المصدر</label><select id="sourceWallet" required></select>
-      <div id="destinationWrap"><label for="destinationWallet">معرّف محفظة المستلم</label><input id="destinationWallet" autocomplete="off" placeholder="الصق معرّف محفظة المستلم"></div>
+      <div id="destinationWrap"><label for="destinationWallet">معرّف محفظة المستلم</label><input id="destinationWallet" autocomplete="off" placeholder="الصق ID: ... أو المعرّف مباشرة" aria-describedby="destinationHelp"><p id="destinationHelp" class="muted small">يمكنك نسخ السطر كاملًا من بطاقة المحفظة، بما في ذلك ID:.</p></div>
       <div id="creditWrap" hidden><label for="creditReference">مرجع الشحن التجريبي</label><input id="creditReference" maxlength="100" placeholder="demo-credit-001"></div>
       <label for="actionAmount">المبلغ (وحدات صحيحة تجريبية)</label><input id="actionAmount" type="number" inputmode="numeric" min="1" step="1" required placeholder="مثال: 500">
       <p class="muted small" id="actionHint">لا تستخدم بيانات أو أموالًا حقيقية.</p>

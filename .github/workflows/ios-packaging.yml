@@ -1,0 +1,90 @@
+name: iOS packaging validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - deploy/render-staging
+    paths:
+      - 'sapay-core 15/mobile/**'
+      - 'sapay-core 15/public/**'
+      - '.github/workflows/ios-packaging.yml'
+  pull_request:
+    paths:
+      - 'sapay-core 15/mobile/**'
+      - 'sapay-core 15/public/**'
+      - '.github/workflows/ios-packaging.yml'
+
+# Checkout and artifact upload need no more than read access to the repository.
+permissions:
+  contents: read
+
+jobs:
+  ios-simulator:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: 'sapay-core 15/mobile'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: 'sapay-core 15/mobile/package-lock.json'
+      - name: Install Capacitor dependencies
+        run: npm ci
+      - name: Generate iOS project
+        # Same sequence as ios-testflight.yml: cap:sync builds the biometric
+        # bridge and adds NSFaceIDUsageDescription, so the validated artifact
+        # matches what ships to TestFlight.
+        run: |
+          npm run copy:web
+          npx cap add ios
+          npm run cap:sync
+      - name: Verify generated iOS project
+        run: node ./scripts/verify-ios-project.mjs
+      - name: Build iOS Simulator app
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Archive sapay-ios-simulator (tar keeps executable permissions)
+        # upload-artifact does not preserve file permissions, so an App.app
+        # uploaded as a folder loses its executable bit.
+        run: tar -C 'build/DerivedData/Build/Products/Release-iphonesimulator' -cf build/sapay-ios-simulator.tar App.app
+      - name: Upload simulator build
+        uses: actions/upload-artifact@v4
+        with:
+          name: sapay-ios-simulator
+          path: 'sapay-core 15/mobile/build/sapay-ios-simulator.tar'
+          if-no-files-found: error
+          retention-days: 7
+      - name: Build unsigned iPhone device app
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build/DeviceDerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+      - name: Archive sapay-ios-device-unsigned (tar keeps executable permissions)
+        # upload-artifact does not preserve file permissions, so an App.app
+        # uploaded as a folder loses its executable bit.
+        run: tar -C 'build/DeviceDerivedData/Build/Products/Release-iphoneos' -cf build/sapay-ios-device-unsigned.tar App.app
+      - name: Upload unsigned iPhone device build
+        uses: actions/upload-artifact@v4
+        with:
+          name: sapay-ios-device-unsigned
+          path: 'sapay-core 15/mobile/build/sapay-ios-device-unsigned.tar'
+          if-no-files-found: error
+          retention-days: 7

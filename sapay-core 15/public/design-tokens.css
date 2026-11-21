@@ -1,0 +1,85 @@
+/* SApay Design System — Phase 0
+   Shared tokens and accessible foundations for the existing vanilla HTML/CSS app.
+   Dark luxury is the default; keep demo disclosures visible and high-contrast. */
+:root {
+  color-scheme: dark;
+  --sapay-bg: #0A0A0A;
+  --sapay-bg-elevated: #111317;
+  --sapay-surface: #17191E;
+  --sapay-surface-raised: #20232A;
+  --sapay-gold: #D4AF37;
+  --sapay-gold-soft: #E8CD78;
+  --sapay-sudan-green: #16845B;
+  --sapay-sudan-white: #F5F3ED;
+  --sapay-sudan-red: #C83D42;
+  --sapay-text: #FFFFFF;
+  --sapay-text-muted: #B8B8B8;
+  --sapay-text-subtle: #969696;
+  --sapay-border: rgba(212, 175, 55, .22);
+  --sapay-border-strong: rgba(212, 175, 55, .42);
+  --sapay-focus: #F0D58D;
+  --sapay-danger: #F07178;
+  --sapay-success: #52C995;
+  --sapay-space-1: 8px;
+  --sapay-space-2: 16px;
+  --sapay-space-3: 24px;
+  --sapay-space-4: 32px;
+  --sapay-radius-sm: 10px;
+  --sapay-radius-md: 16px;
+  --sapay-radius-lg: 22px;
+  --sapay-content-width: 1120px;
+  --sapay-font-ar: "Cairo", Tahoma, Arial, sans-serif;
+  --sapay-font-en: "Inter", "Montserrat", system-ui, sans-serif;
+  --navy: var(--sapay-gold-soft);
+  --navy2: var(--sapay-surface-raised);
+  --green: var(--sapay-gold);
+  --mint: rgba(212, 175, 55, .12);
+  --ink: var(--sapay-text);
+  --muted: var(--sapay-text-muted);
+  --line: var(--sapay-border);
+  --surface: var(--sapay-bg-elevated);
+  --bg: var(--sapay-bg);
+  --shadow: 0 16px 42px rgba(0, 0, 0, .32);
+}
+html { background: var(--sapay-bg); scroll-behavior: smooth; }
+body { background: var(--sapay-bg); color: var(--sapay-text); font-family: var(--sapay-font-ar); }
+:where(h1,h2,h3,h4) { color: var(--sapay-text); line-height: 1.3; }
+:where(p,li,label,small) { line-height: 1.65; }
+:where(button,a,input,select,textarea,[role="button"]) { -webkit-tap-highlight-color: transparent; }
+:where(button,a,[role="button"]) { min-height: 44px; }
+:where(button,a,[role="button"]) { touch-action: manipulation; }
+:where(input,select,textarea) { font: inherit; }
+:focus-visible { outline: 2px solid var(--sapay-focus); outline-offset: 3px; }
+::selection { background: rgba(212,175,55,.32); color: #fff; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* Existing app components consume the shared token layer without changing behavior. */
+.topbar { background: var(--sapay-bg-elevated); border-color: var(--sapay-border); }
+.brand, .brand-green, .intro h1, .welcome-row h1, .section-heading h2,
+.auth-panel h2, .dialog h2, .wallet-currency, .wallet-balance, .history-title { color: var(--sapay-gold-soft); }
+.brand-mark { background: linear-gradient(145deg, #292315, #111317); color: var(--sapay-gold-soft); }
+.panel, .auth-panel, .wallet-card, .history-list, .dialog { background: var(--sapay-bg-elevated); border-color: var(--sapay-border); color: var(--sapay-text); }
+.tabs { background: var(--sapay-surface); }
+.tab { color: var(--sapay-text-muted); }
+.tab.active { background: var(--sapay-surface-raised); color: var(--sapay-gold-soft); }
+label { color: var(--sapay-text-muted); }
+input, select, textarea { background: var(--sapay-surface); border-color: var(--sapay-border); color: var(--sapay-text); }
+input::placeholder, textarea::placeholder { color: var(--sapay-text-subtle); opacity: 1; }
+input:focus, select:focus, textarea:focus { border-color: var(--sapay-gold); box-shadow: 0 0 0 3px rgba(212,175,55,.18); }
+.primary { background: var(--sapay-gold); color: #17130A; }
+.primary:hover { background: var(--sapay-gold-soft); }
+.outline-btn { background: rgba(212,175,55,.10); color: var(--sapay-gold-soft); border-color: var(--sapay-border); }
+.balance-card { background: linear-gradient(115deg, #17140D, #342A12 62%, #17191E); border: 1px solid var(--sapay-border-strong); }
+.balance-top, .balance-foot { color: #E5D9B7; }
+.notice { background: rgba(212,175,55,.10); border-color: var(--sapay-border); color: #F0E5C7; }
+.secure-label { background: rgba(82,201,149,.12); color: var(--sapay-success); }
+.history-item { border-color: var(--sapay-border); }
+.footer-note { color: var(--sapay-text-subtle); }
+.dialog::backdrop { background: rgba(0,0,0,.76); }
+.close-btn { background: var(--sapay-surface-raised); color: var(--sapay-text); }
+@media (max-width: 760px) {
+  .shell { padding-inline: 16px; }
+  .auth-panel, .wallet-card { border-radius: var(--sapay-radius-md); }
+}
