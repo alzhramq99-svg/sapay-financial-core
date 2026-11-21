@@ -4,11 +4,13 @@
 // in real Safari on a device. Requires Playwright with Chromium installed
 // (it is not a project dependency yet):
 //   node "test/web/pwa.e2e.cjs" public
-// The script copies nothing: point it at a scratch copy of public/, because
-// the update check appends a line to app.js.
+// The update check edits app.js, so the script serves a temporary copy of the
+// given directory and never modifies it.
 const { chromium, devices } = require('playwright');
-const http = require('http'); const fs = require('fs'); const path = require('path');
-const root = path.resolve(process.argv[2] || 'public');
+const http = require('http'); const fs = require('fs'); const os = require('os'); const path = require('path');
+const source = path.resolve(process.argv[2] || 'public');
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sapay-pwa-e2e-'));
+fs.cpSync(source, root, { recursive: true });
 const types = { '.html':'text/html; charset=utf-8', '.js':'text/javascript', '.css':'text/css', '.png':'image/png', '.svg':'image/svg+xml', '.webmanifest':'application/manifest+json' };
 let serverErrorPages = false; // when true, the HTML shell answers 503, as a failing host would
 const server = http.createServer((req, res) => {
@@ -103,4 +105,5 @@ const results = []; const check = (name, ok, extra='') => { results.push(`${ok ?
   console.log(`\n${results.length - failed}/${results.length} passed`);
   process.exitCode = failed ? 1 : 0;
   await browser.close(); server.close();
+  fs.rmSync(root, { recursive: true, force: true });
 })().catch(e => { console.error(e); process.exit(1); });
