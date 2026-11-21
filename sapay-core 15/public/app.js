@@ -273,7 +273,7 @@ if (state.token) {
   const intro=(eyebrow,title,description)=>'<div class="page-intro"><div class="eyebrow">'+eyebrow+'</div><h2>'+title+'</h2><p>'+description+'</p></div>';
   pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
     '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
-    '<div class="notice">التحويلات البنكية والدولية معروضة للتعريف فقط، ولا تنفّذ النسخة التجريبية أي تحويلات خارجية أو أموالًا حقيقية.</div>'+
+    '<div class="notice">التحويلات البنكية والدولية معروضة للتعريف فقط؛ لا تنفّذ النسخة التجريبية أي تحويلات خارجية ولا ترسل أو تستقبل أموالًا حقيقية.</div>'+
     '<div class="section-heading"><div><div class="eyebrow">داخل السودان</div><h2>التحويل إلى البنوك السودانية</h2></div></div>'+
     '<div class="action-feature panel"><div class="feature-symbol">⌂</div><div><h3>تحويل بنكي محلي</h3><p>اختر البنك المستهدف من دليل البنوك في صفحة الخدمات. الربط المصرفي والتنفيذ الفعلي غير متاحين حاليًا.</p><button class="outline-btn" data-go="services" type="button">استعراض البنوك السودانية</button></div></div>'+
     '<div class="section-heading"><div><div class="eyebrow">عبر الحدود</div><h2>التحويلات العالمية</h2></div></div>'+
