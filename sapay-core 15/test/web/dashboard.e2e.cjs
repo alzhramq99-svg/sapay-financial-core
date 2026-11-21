@@ -21,7 +21,7 @@ function startServer() {
       const f = path.join(root, p);
       if (!f.startsWith(root) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
       res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
-    }).listen(0, () => resolve(server));
+    }).listen(0, '127.0.0.1', () => resolve(server)); // loopback only
   });
 }
 
@@ -46,7 +46,7 @@ async function run(orientation, port, results) {
   const ctx = await browser.newContext({ ...device, serviceWorkers: 'block' });
   await mockApi(ctx);
   const page = await ctx.newPage(); const errors = []; page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto(`http://localhost:${port}/`);
+  await page.goto(`http://127.0.0.1:${port}/`);
   await page.fill('#email', 'demo@example.test'); await page.fill('#password', 'demo-password-2026');
   await page.click('#authSubmit');
   await page.waitForFunction(() => document.querySelectorAll('.wallet-card').length > 0, null, { timeout: 10000 }).catch(() => {});

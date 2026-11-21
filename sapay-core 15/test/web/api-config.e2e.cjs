@@ -19,7 +19,7 @@ const server = http.createServer((req, res) => {
   const f = path.join(root, p);
   if (!f.startsWith(root) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
-}).listen(0, async () => {
+}).listen(0, '127.0.0.1', async () => { // loopback only
   const port = server.address().port;
   const browser = await chromium.launch({ args: ['--host-resolver-rules=MAP sapay.test 127.0.0.1'] });
   const page = await browser.newPage();

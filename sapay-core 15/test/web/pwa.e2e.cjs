@@ -19,7 +19,7 @@ const server = http.createServer((req, res) => {
   const f = path.join(root, p);
   if (!f.startsWith(root) || !fs.existsSync(f)) { res.writeHead(404, {'content-type':'text/html'}); return res.end('<h1>404</h1>'); }
   res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream', 'cache-control': 'no-cache' }); fs.createReadStream(f).pipe(res);
-}).listen(0); // ephemeral port: never collides with a running dev server
+}).listen(0, '127.0.0.1'); // loopback only, ephemeral port: not reachable from the network, no collisions
 // Served from localhost, the app calls its own origin's /api (see apiOrigin in app.js).
 let ORIGIN; let API; // set once the server has its port
 // Read the cache name from the worker itself so a version bump cannot leave this test stale.
@@ -27,7 +27,7 @@ const CACHE_NAME = 'sapay-iphone-shell-' + fs.readFileSync(path.join(root, 'serv
 const results = []; const check = (name, ok, extra='') => { results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? ' — ' + extra : ''}`); };
 (async () => {
   if (!server.listening) await new Promise((r) => server.once('listening', r));
-  ORIGIN = 'http://localhost:' + server.address().port; API = ORIGIN + '/api';
+  ORIGIN = 'http://127.0.0.1:' + server.address().port; API = ORIGIN + '/api';
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'allow' });
   let apiMode = 'ok'; const calls = []; const apiOrigins = new Set();
