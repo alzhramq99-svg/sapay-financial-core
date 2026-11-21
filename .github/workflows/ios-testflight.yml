@@ -13,7 +13,8 @@ permissions:
   contents: read
 
 jobs:
-  build-and-upload:
+  # Builds and signs the IPA. Never uploads anything.
+  build-signed:
     runs-on: macos-15
     defaults:
       run:
@@ -26,35 +27,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: 'sapay-core 15/mobile/package-lock.json'
 
-      - name: Validate required signing and App Store Connect secrets
+      - name: Validate required signing secrets
         env:
           IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
           IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
         run: |
-          for name in IOS_DISTRIBUTION_CERTIFICATE_BASE64 IOS_CERTIFICATE_PASSWORD IOS_PROVISIONING_PROFILE_BASE64 IOS_TEAM_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_API_PRIVATE_KEY; do
+          for name in IOS_DISTRIBUTION_CERTIFICATE_BASE64 IOS_CERTIFICATE_PASSWORD IOS_PROVISIONING_PROFILE_BASE64 IOS_TEAM_ID; do
             if [ -z "${!name}" ]; then echo "Missing required GitHub Actions secret: $name"; exit 1; fi
           done
 
-      - name: Validate App Store Connect API private key
-        env:
-          APP_STORE_CONNECT_API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
-        run: |
-          printf '%s\n' "$APP_STORE_CONNECT_API_PRIVATE_KEY" > "$RUNNER_TEMP/AuthKey.p8"
-          openssl pkey -in "$RUNNER_TEMP/AuthKey.p8" -noout
-          rm -f "$RUNNER_TEMP/AuthKey.p8"
-
       - name: Install Capacitor dependencies and generate iOS project
         run: |
-          npm install
+          npm ci
           npm run copy:web
           npx cap add ios
           npm run cap:sync
+          node ./scripts/verify-ios-project.mjs
 
       - name: Install Apple Distribution certificate
         env:
@@ -163,8 +156,41 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # Separate job so the upload can be held for explicit approval: add required
+  # reviewers to the `testflight` environment (Settings > Environments) and
+  # every upload waits for one of them, on top of upload_to_testflight=true.
+  upload-testflight:
+    needs: build-signed
+    if: ${{ inputs.upload_to_testflight == true }}
+    runs-on: macos-15
+    environment: testflight
+    steps:
+      - name: Validate App Store Connect secrets
+        env:
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
+        run: |
+          for name in APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_API_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then echo "Missing required GitHub Actions secret: $name"; exit 1; fi
+          done
+          printf '%s\n' "$APP_STORE_CONNECT_API_PRIVATE_KEY" > "$RUNNER_TEMP/AuthKey.p8"
+          openssl pkey -in "$RUNNER_TEMP/AuthKey.p8" -noout
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
+
+      - name: Download signed IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: sapay-iphone-ipa
+          path: ${{ runner.temp }}/ipa
+
+      - name: Resolve IPA path
+        run: |
+          IPA_PATH="$(find "$RUNNER_TEMP/ipa" -maxdepth 1 -type f -name '*.ipa' -print -quit)"
+          test -n "$IPA_PATH"
+          echo "IPA_PATH=$IPA_PATH" >> "$GITHUB_ENV"
+
       - name: Upload build to TestFlight
-        if: ${{ inputs.upload_to_testflight == true }}
         uses: apple-actions/upload-testflight-build@v1
         with:
           app-path: ${{ env.IPA_PATH }}
