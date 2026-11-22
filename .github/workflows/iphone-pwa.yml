@@ -1,0 +1,17 @@
+name: SApay iPhone PWA readiness
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'sapay-core 15/public/**'
+      - 'sapay-core 15/scripts/verify-iphone-pwa.py'
+      - '.github/workflows/iphone-pwa.yml'
+permissions:
+  contents: read
+jobs:
+  pwa-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate iPhone PWA install metadata, icons, offline shell and API cache exclusions
+        run: python3 'sapay-core 15/scripts/verify-iphone-pwa.py'
