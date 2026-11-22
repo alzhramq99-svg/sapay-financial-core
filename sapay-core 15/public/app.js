@@ -156,7 +156,7 @@ if (state.token) {
   const footer=root.querySelector('.footer-note');
   const nav=document.createElement('nav');
   nav.className='app-nav'; nav.setAttribute('aria-label','التنقل الرئيسي');
-  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['account','◎','حسابي'],['support','?','المساعدة'],['settings','⚙','الإعدادات']];
+  const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['cards','▤','البطاقات'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['account','◎','حسابي'],['support','?','المساعدة'],['settings','⚙','الإعدادات']];
   definitions.forEach(([key,icon,label],i)=>{
     const button=document.createElement('button'); button.type='button'; button.className='nav-item'+(i===0?' active':'');
     button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
@@ -167,6 +167,7 @@ if (state.token) {
   if(balance) pages.home.append(balance);
   const shortcuts=document.createElement('div');shortcuts.className='home-shortcuts';
   shortcuts.innerHTML='<button class="shortcut-card" data-go="wallets" type="button"><span>◈</span><b>إدارة المحافظ</b><small>الأرصدة والمحافظ</small></button><button class="shortcut-card" data-go="transfers" type="button"><span>⇄</span><b>تحويل تجريبي</b><small>بين محافظ SApay</small></button><button class="shortcut-card" data-go="services" type="button"><span>▦</span><b>الخدمات</b><small>الفواتير والخدمات السودانية</small></button>';
+  shortcuts.innerHTML += '<button class="shortcut-card" data-go="cards" type="button"><span>▤</span><b>البطاقات الافتراضية</b><small>معاينة تجريبية فقط</small></button>';
   pages.home.append(shortcuts);
   if(footer) pages.home.append(footer);
   if(walletHeading) pages.wallets.append(walletHeading);
@@ -174,6 +175,11 @@ if (state.token) {
   if(historyHeading) pages.history.append(historyHeading);
   if(history) pages.history.append(history);
   const intro=(eyebrow,title,description)=>'<div class="page-intro"><div class="eyebrow">'+eyebrow+'</div><h2>'+title+'</h2><p>'+description+'</p></div>';
+  pages.cards.innerHTML=intro('بطاقات SApay','البطاقات الافتراضية','معاينة تصميمية لبطاقات دفع افتراضية؛ ليست بطاقات صادرة ولا تدعم الدفع أو Apple Pay أو ربط Visa/Mastercard.')+
+    '<div class="virtual-card-grid" aria-label="نماذج البطاقات الافتراضية">'+
+    '<article class="virtual-payment-card"><div class="virtual-card-top"><strong>SApay</strong><span>VISA · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span>غير مفعّلة</span></div></article>'+
+    '<article class="virtual-payment-card secondary"><div class="virtual-card-top"><strong>SApay</strong><span>Mastercard · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span>غير مفعّلة</span></div></article>'+
+    '</div><p class="virtual-card-warning">هذه نماذج واجهة فقط، وليست بطاقات Visa أو Mastercard حقيقية أو صادرة عن أي جهة. لا يمكن استخدامها للشراء أو التحويل أو شحن الأموال.</p>';
   pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
     '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
     '<div class="notice">لا يدعم هذا النموذج التحويل إلى بنك أو محفظة خارجية، ولا ينفّذ أي حركة مالية حقيقية.</div>';

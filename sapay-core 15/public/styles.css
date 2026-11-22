@@ -66,3 +66,16 @@ input::placeholder{color:#777166}input:focus,select:focus{border-color:#d6b66b;b
 .institution-chip:active{background:rgba(213,180,106,.16)}
 .directory-footnote{margin-top:17px}
 @media(max-width:520px){.directory-panel{padding:15px}.directory-heading h3{font-size:17px}.directory-item{align-items:flex-start}.directory-item em{margin-inline-start:auto}}
+
+
+/* Virtual payment card previews: visual-only, no issuance or payment capability. */
+.virtual-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:18px;margin:22px 0}
+.virtual-payment-card{min-height:205px;border-radius:22px;padding:23px;color:#fff;background:linear-gradient(130deg,#090a0c,#26231b 65%,#5c4824);border:1px solid #b99b55;box-shadow:0 16px 35px #0003;display:flex;flex-direction:column;justify-content:space-between;direction:ltr}
+.virtual-payment-card.secondary{background:linear-gradient(130deg,#10131c,#1e2940 70%,#35496b);border-color:#6f829e}
+.virtual-card-top,.virtual-card-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.virtual-card-top strong{font-size:23px;letter-spacing:.2px;color:#d4af37}.virtual-card-top span{font-size:13px;color:#f3e6c5}
+.virtual-card-chip{font-size:29px;color:#d4af37;line-height:1}
+.virtual-card-number{font-size:23px;letter-spacing:3px;white-space:nowrap}
+.virtual-card-bottom{font-size:11px;letter-spacing:.5px;color:#ddd}
+.virtual-card-warning{font-size:13px;line-height:1.9;color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:14px}
+@media(max-width:420px){.virtual-payment-card{min-height:190px;padding:18px}.virtual-card-number{font-size:19px}}
