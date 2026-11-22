@@ -4,7 +4,9 @@ const state = { token: sessionStorage.getItem('sapay_access_token') || '', user:
 let actionIdempotencyKey = '';
 const money = (minor) => { try { return BigInt(minor || '0').toLocaleString('en-US'); } catch { return '0'; } };
 const headers = () => ({ 'Content-Type': 'application/json', ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}) });
-const nativeRuntime = window.location.protocol === 'capacitor:';
+// Capacitor iOS commonly serves its WebView from https://localhost, not capacitor:.
+// Detect the native bridge as well so API requests never target the WebView itself.
+const nativeRuntime = window.location.protocol === 'capacitor:' || window.Capacitor?.isNativePlatform?.() === true;
 const configuredApiBase = String(window.SAPAY_CONFIG?.apiBaseUrl || '').trim().replace(/\/+$/, '');
 const externalTransfersEnabled = window.SAPAY_CONFIG?.features?.externalTransfers === true;
 // Render's free plan sleeps when idle; the first request can take close to a minute.
