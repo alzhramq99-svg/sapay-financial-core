@@ -2,6 +2,11 @@ name: SApay iOS Simulator build
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'sapay-core 15/mobile/**'
+      - 'sapay-core 15/public/**'
+      - '.github/workflows/ios-simulator.yml'
 
 permissions:
   contents: read
