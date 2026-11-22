@@ -413,3 +413,31 @@ input::placeholder{color:#777166}input:focus,select:focus{border-color:#d6b66b;b
     font-size: 11px;
   }
 }
+
+
+/* Compact service directory: show a short preview and expand on demand. */
+#appView .page-view[data-view="services"] .directory-expand {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  margin-top: 9px;
+  padding: 9px 12px;
+  border: 1px solid #80683c;
+  border-radius: 11px;
+  background: #211c13;
+  color: #e8ca80;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+#appView .page-view[data-view="services"] .directory-expand[hidden] {
+  display: none;
+}
+#appView .page-view[data-view="services"] .institution-chips,
+#appView .page-view[data-view="services"] #sudanBanks,
+#appView .page-view[data-view="services"] #globalDestinations {
+  max-height: none;
+  overflow: visible;
+}
