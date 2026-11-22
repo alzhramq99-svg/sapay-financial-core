@@ -10,6 +10,7 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   app.setGlobalPrefix('api');
   const vercelProjectOrigins = new Set([
+    'https://sapay-api.onrender.com',
     'https://sapay-financial-core.vercel.app',
     'https://sapay-financial-core-saad-ali5.vercel.app',
     'https://sapay-financial-core-git-main-saad-ali5.vercel.app',
