@@ -102,12 +102,18 @@ describe('PostgreSQL API integration (isolated test database only)', () => {
   let baseUrl: string;
   let accessToken: string;
   // Isolate each integration case from the prior case's per-IP rate-limit window.
-  // Keep elapsed mocked time below the 15-minute bootstrap JWT lifetime.
+  // Advance the middleware clock between tests; issue a fresh JWT for each test window.
   const realNow = Date.now.bind(Date);
   let testWindow = 0;
-  beforeEach(() => {
+  beforeEach(async () => {
     testWindow += 1;
     jest.spyOn(Date, 'now').mockImplementation(() => realNow() + testWindow * 61_000);
+    // Mint a fresh bearer token inside the same test clock window.
+    const code = randomUUID().replace(/-/g, '');
+    await seedInvitation(code);
+    const registration = await registerWithCode(`integration-${randomUUID()}@example.test`, code);
+    expect(registration.status).toBe(201);
+    accessToken = (registration.body as { accessToken?: string }).accessToken!;
   });
   afterEach(() => jest.restoreAllMocks());
 
@@ -139,7 +145,7 @@ describe('PostgreSQL API integration (isolated test database only)', () => {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email, password: 'integration-password-2026', inviteCode }),
     });
-    return { status: response.status, body: await response.json() as { message?: string; user?: { id: string } } };
+    return { status: response.status, body: await response.json() as { message?: string; user?: { id: string }; accessToken?: string } };
   }
 
   beforeAll(async () => {
@@ -147,11 +153,6 @@ describe('PostgreSQL API integration (isolated test database only)', () => {
     app.setGlobalPrefix('api');
     await app.listen(0, '127.0.0.1');
     baseUrl = await app.getUrl();
-    const bootstrapCode = randomUUID().replace(/-/g, '');
-    await seedInvitation(bootstrapCode);
-    const registration = await fetch(`${baseUrl}/api/auth/register`, { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({email:`integration-${randomUUID()}@example.test`,password:'integration-password-2026',inviteCode:bootstrapCode}) });
-    expect(registration.status).toBe(201);
-    accessToken = (await registration.json() as {accessToken:string}).accessToken;
   });
 
   afterAll(async () => {
@@ -212,6 +213,8 @@ describe('PostgreSQL API integration (isolated test database only)', () => {
     expect((await registerWithCode('used-first-' + randomUUID() + '@example.test', usedCode)).status).toBe(201);
     const attempts = [undefined, 'bad', randomUUID().replace(/-/g, ''), expiredCode];
     for (const inviteCode of attempts) {
+      // Each invalid-code probe must reach the controller, not the shared 5/minute IP limiter.
+      testWindow += 1;
       const result = await registerWithCode('rejected-' + randomUUID() + '@example.test', inviteCode);
       expect(result.status).toBe(400);
       expect(result.body.message).toBe('Invitation code is invalid, expired, or already used');
