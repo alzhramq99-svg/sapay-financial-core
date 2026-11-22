@@ -34,6 +34,8 @@ function setAuthMode(mode) {
   $('authHint').textContent = mode === 'login' ? 'سجّل الدخول للوصول إلى محفظتك التجريبية.' : 'استخدم بريدًا تجريبيًا وكلمة مرور من 12 حرفًا على الأقل.';
   $('authSubmit').textContent = mode === 'login' ? 'دخول آمن' : 'إنشاء الحساب';
   $('password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  $('inviteCodeWrap').hidden = mode !== 'register';
+  $('inviteCode').required = mode === 'register';\n  $('inviteCodeWrap').hidden = mode !== 'register';\n  $('inviteCode').required = mode === 'register';
   message('authMessage', '');
 }
 $('loginTab').addEventListener('click', () => setAuthMode('login'));
@@ -41,7 +43,7 @@ $('registerTab').addEventListener('click', () => setAuthMode('register'));
 $('authForm').addEventListener('submit', async (event) => {
   event.preventDefault(); const button = $('authSubmit'); button.disabled = true; message('authMessage', 'جارٍ التحقق…');
   try {
-    const result = await api('/auth/' + (state.authMode === 'login' ? 'login' : 'register'), { method: 'POST', body: JSON.stringify({ email: $('email').value.trim(), password: $('password').value }) });
+    const result = await api('/auth/' + (state.authMode === 'login' ? 'login' : 'register'), { method: 'POST', body: JSON.stringify({ email: $('email').value.trim(), password: $('password').value, ...(state.authMode === 'register' ? { inviteCode: $('inviteCode').value.trim() } : {}) }) });
     state.token = result.accessToken; state.user = result.user; sessionStorage.setItem('sapay_access_token', state.token);
     await showDashboard();
   } catch (error) { message('authMessage', error.message); }
