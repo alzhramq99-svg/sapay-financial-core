@@ -1,13 +1,13 @@
 name: SApay CI
 
 on:
+  # Every pull request, whatever its base branch. Stacked PRs into
+  # intermediate branches (deploy/*, feature/*) must be tested too, and
+  # there is deliberately no `paths` filter: a filtered-out workflow never
+  # reports a status, so a required check would block doc-only PRs forever.
   pull_request:
-    branches: [main]
-    paths:
-      - 'sapay-core 15/**'
-      - '.github/workflows/sapay-ci.yml'
   push:
-    branches: [main, 'recovery/**']
+    branches: [main, 'feature/**', 'fix/**', 'chore/**', 'recovery/**']
     paths:
       - 'sapay-core 15/**'
       - '.github/workflows/sapay-ci.yml'
