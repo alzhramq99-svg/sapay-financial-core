@@ -59,7 +59,10 @@ body { background: var(--sapay-bg); color: var(--sapay-text); font-family: var(-
 .topbar { background: var(--sapay-bg-elevated); border-color: var(--sapay-border); }
 .brand, .brand-green, .intro h1, .welcome-row h1, .section-heading h2,
 .auth-panel h2, .dialog h2, .wallet-currency, .wallet-balance, .history-title { color: var(--sapay-gold-soft); }
-.brand-mark { background: linear-gradient(145deg, #292315, #111317); color: var(--sapay-gold-soft); }
+/* The header mark holds the official SApay monogram (PR #9); its own dark
+   background shows through the icon's rounded corners. */
+.brand-mark { background: #080909; color: var(--sapay-gold-soft); padding: 0; }
+.brand-mark img { display: block; }
 .panel, .auth-panel, .wallet-card, .history-list, .dialog { background: var(--sapay-bg-elevated); border-color: var(--sapay-border); color: var(--sapay-text); }
 .tabs { background: var(--sapay-surface); }
 .tab { color: var(--sapay-text-muted); }

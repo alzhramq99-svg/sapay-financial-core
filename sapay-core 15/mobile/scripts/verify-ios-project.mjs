@@ -37,6 +37,15 @@ const [webIndex, bundledIndex, bridge] = await Promise.all([
 check(webIndex.length > 0 && bundledIndex === webIndex, 'bundled index.html is identical to sapay-core 15/public/index.html');
 check(bridge.includes('SApayBiometric'), 'Face ID bridge (biometric-bridge.js) is bundled');
 
+// The app icon must be the official SApay monogram, not Capacitor's default.
+const iconSetDir = 'ios/App/App/Assets.xcassets/AppIcon.appiconset';
+const iconEntry = JSON.parse((await read(`${iconSetDir}/Contents.json`)) || '{}').images?.[0];
+const [installedIcon, officialIcon] = await Promise.all([
+  readFile(path.resolve(`${iconSetDir}/${iconEntry?.filename ?? 'missing'}`)).catch(() => Buffer.alloc(0)),
+  readFile(path.resolve('resources/AppIcon-1024.png')).catch(() => Buffer.alloc(0)),
+]);
+check(officialIcon.length > 0 && installedIcon.equals(officialIcon), 'app icon is the official SApay monogram (resources/AppIcon-1024.png)');
+
 if (failures.length) {
   for (const f of failures) console.error(`FAIL ${f}`);
   process.exit(1);
