@@ -79,3 +79,18 @@ input::placeholder{color:#777166}input:focus,select:focus{border-color:#d6b66b;b
 .virtual-card-bottom{font-size:11px;letter-spacing:.5px;color:#ddd}
 .virtual-card-warning{font-size:13px;line-height:1.9;color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:14px}
 @media(max-width:420px){.virtual-payment-card{min-height:190px;padding:18px}.virtual-card-number{font-size:19px}}
+
+
+/* Demo card management: controls never connect to card issuance or payments. */
+.virtual-card-manager{min-width:0}
+.virtual-card-manager .virtual-payment-card{height:100%}
+.virtual-card-manager.is-frozen .virtual-payment-card{filter:saturate(.4);opacity:.75}
+.demo-card-controls{display:flex;gap:10px;margin-top:12px}
+.demo-card-button{flex:1;min-height:44px;padding:10px 8px;border:1px solid var(--line);border-radius:12px;background:rgba(213,180,106,.06);color:inherit;font-size:13px;font-weight:700}
+.demo-card-details,.demo-card-history{padding:20px;margin:18px 0}
+.demo-card-details h3,.demo-card-history h3{margin:0 0 12px}
+.demo-card-details p,.demo-card-history{line-height:1.8}
+.demo-card-event{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.demo-card-event:last-child{border-bottom:0}
+.demo-card-event small{color:var(--muted);font-size:12px}
+@media(max-width:420px){.demo-card-controls{flex-direction:column}.demo-card-event{align-items:flex-start;flex-direction:column;gap:2px}}
