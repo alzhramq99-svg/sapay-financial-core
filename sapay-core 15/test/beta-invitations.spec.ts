@@ -30,4 +30,27 @@ describe('Invitation-only registration', () => {
       expect.stringMatching(/UPDATE beta_invitations.*used_by/is),
     ]);
   });
+  it('refuses to claim an invitation when the token-signing secret is missing', async () => {
+    const query = jest.fn()
+      .mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 'invite-id' }] })
+      .mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 'user-id', email: 'new@example.test' }] })
+      .mockResolvedValueOnce({ rowCount: 1, rows: [] });
+    const withTransaction = jest.fn(async (work: (client: any) => Promise<any>) => work({ query }));
+    const service = new AuthService({ withTransaction, query: jest.fn() } as any);
+    const oldSecret = process.env.AUTH_TOKEN_SECRET;
+    delete process.env.AUTH_TOKEN_SECRET;
+    try {
+      await expect(service.register({
+        email: 'new@example.test',
+        password: 'long-enough-password',
+        inviteCode: 'a'.repeat(32),
+      })).rejects.toThrow('AUTH_TOKEN_SECRET must be set');
+      expect(withTransaction).not.toHaveBeenCalled();
+      expect(query).not.toHaveBeenCalled();
+    } finally {
+      if (oldSecret === undefined) delete process.env.AUTH_TOKEN_SECRET;
+      else process.env.AUTH_TOKEN_SECRET = oldSecret;
+    }
+  });
+
 });

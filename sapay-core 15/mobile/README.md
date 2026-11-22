@@ -3,7 +3,7 @@
 This folder packages the existing Arabic SApay web interface as an iOS app using Capacitor. It does not reimplement wallet or API logic.
 
 ## Requirements
-- Node.js 20+
+- Node.js 22+ (required by the current Capacitor 8 toolchain)
 - macOS with Xcode 16+ for iOS builds (the cloud workflow uses a GitHub-hosted macOS runner)
 - Active Apple Developer Program membership and App Store Connect access for device distribution through TestFlight
 
@@ -13,7 +13,7 @@ This folder packages the existing Arabic SApay web interface as an iOS app using
 cd "sapay-core 15/mobile"
 npm ci
 npm run copy:web
-npx cap add ios
+npx cap add ios --packagemanager CocoaPods
 npm run cap:sync                       # bridge, Face ID text, dark launch screen
 node ./scripts/verify-ios-project.mjs  # same checks as CI
 ```

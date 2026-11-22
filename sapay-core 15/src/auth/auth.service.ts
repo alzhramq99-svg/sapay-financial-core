@@ -62,6 +62,8 @@ export class AuthService {
     if (typeof inviteCode !== 'string' || !/^[A-Za-z0-9_-]{32,128}$/.test(inviteCode)) {
       throw new BadRequestException(invalidInvitation);
     }
+    // Fail before consuming a one-time invitation if JWT signing is misconfigured.
+    this.secret();
     const codeHash = createHash('sha256').update(inviteCode).digest('hex');
     const passwordHash = await this.hashPassword(password);
     try {
