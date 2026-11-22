@@ -1,0 +1,54 @@
+/* SApay Sudan-inspired luxury identity — layered over the existing responsive UI */
+:root{
+ color-scheme:dark;
+ --navy:#080b0d;--navy2:#111719;--green:#d4ad59;--mint:#282218;
+ --ink:#f4efe4;--muted:#a79f91;--line:#34312a;--surface:#141719;--bg:#090c0e;
+ --shadow:0 18px 54px #0009;
+}
+html,body{background:var(--bg);color:var(--ink)}
+body{background:radial-gradient(ellipse at 12% 8%,#26301f 0,transparent 34%),radial-gradient(ellipse at 88% 0%,#302515 0,transparent 30%),#090c0e}
+.topbar{background:#0b0e0fee;border-bottom:1px solid #b38d493d;backdrop-filter:blur(16px)}
+.brand{color:#f4ead5}.brand-mark{background:linear-gradient(145deg,#e2c477,#9e7430);color:#111;border-radius:11px;box-shadow:0 5px 18px #d4ad5933}
+.brand-green{color:#d4ad59}
+.demo-pill{background:#241d11;color:#e7c77e;border-color:#745a2c}.demo-pill i{background:#d4ad59}
+.shell{max-width:1160px}
+.eyebrow{color:#d4ad59;letter-spacing:.7px}
+.intro h1,.welcome-row h1,.section-heading h2,.auth-panel h2,.dialog h2{color:#f5eddf}
+.intro h1 span{color:#d4ad59}
+.intro>p,.feature-line{color:#b9b1a4}
+.feature-line span{background:#292319;color:#e2bf70}
+.panel,.wallet-card{background:linear-gradient(145deg,#171b1d,#101416);border-color:#3b3428;box-shadow:var(--shadow)}
+.auth-panel{border-radius:22px}
+.tabs{background:#0c1012;border:1px solid #302c24}
+.tab{color:#a9a293}.tab.active{background:linear-gradient(135deg,#e1c47b,#ad843e);color:#17130c;box-shadow:0 5px 18px #d4ad5922}
+label{color:#d9cfbd}
+input,select{background:#0c1012;color:#f5eddf;border-color:#403a30}
+input::placeholder{color:#777367}
+input:focus,select:focus{border-color:#d4ad59;box-shadow:0 0 0 3px #d4ad591c}
+.primary{background:linear-gradient(135deg,#e3c77f,#b88c43);color:#17130c;box-shadow:0 7px 20px #d4ad5920}
+.primary:hover{background:linear-gradient(135deg,#f0d995,#c79c50)}
+.subtle-btn,.text-btn{color:#c8bda8}
+.secure-label{background:#292319;color:#e4c477}
+.notice{background:#211b11;border-color:#72572b;color:#e6c982}
+.balance-card{background:linear-gradient(118deg,#151a1c 0%,#252014 58%,#111719 100%);border:1px solid #92713b;box-shadow:0 18px 45px #0008}
+.balance-card:after{border-color:#d4ad5930;box-shadow:0 0 0 28px #d4ad590d,0 0 0 58px #d4ad5908}
+.balance-top,.balance-foot{color:#d1c5ad}.balance-icon{color:#e3c477}
+.total-currency small{color:#d1c5ad}.total-separator{color:#d4ad59}
+.currency-icon{background:#292319;color:#e4c477}
+.wallet-currency,.wallet-balance,.history-title{color:#f1e7d5}
+.wallet-id,.history-meta{color:#928b7f}
+.outline-btn{background:#241f15;color:#e2c477;border-color:#6c542b}
+.history-list{background:#121618;border-color:#383329}
+.history-item{border-color:#302d27}
+.history-amount.credit{color:#d9bb72}.history-amount.debit{color:#d18b78}
+.footer-note{color:#827b70}.footer-note a{color:#d4ad59}
+.dialog{background:#141719;color:#f4efe4;border-color:#51432b}
+.close-btn{background:#28251e;color:#e2c477}
+.toast{background:#e0c077;color:#17130c}
+@media(max-width:760px){
+ body{background:radial-gradient(ellipse at 50% 0%,#282114 0,transparent 42%),#090c0e}
+ .auth-layout{gap:20px}.intro h1{font-size:34px}
+ .auth-panel{padding:19px}
+ .wallet-card{border-radius:16px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
