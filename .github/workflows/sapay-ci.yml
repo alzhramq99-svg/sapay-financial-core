@@ -1,13 +1,13 @@
 name: SApay CI
 
 on:
+  # Validate stacked PRs too: their base may be another feature branch.
   pull_request:
-    branches: [main, deploy/render-staging]
     paths:
       - 'sapay-core 15/**'
       - '.github/workflows/sapay-ci.yml'
   push:
-    branches: [main, deploy/render-staging, 'recovery/**', 'fix/**']
+    branches: [main, deploy/render-staging, 'recovery/**', 'fix/**', 'claude/**']
     paths:
       - 'sapay-core 15/**'
       - '.github/workflows/sapay-ci.yml'
