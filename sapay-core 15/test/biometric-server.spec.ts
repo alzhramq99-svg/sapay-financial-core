@@ -9,7 +9,7 @@ describe('biometric Keychain server key', () => {
 
   it('matches between the web app and the native bridge default', () => {
     const webKey = /const biometricServer = '([^']+)'/.exec(read('public/app.js'))?.[1];
-    const bridgeKey = /const SERVER = '([^']+)'/.exec(read('mobile/src/biometric.ts'))?.[1];
+    const bridgeKey = /const SERVER = '([^']+)'/.exec(read('mobile/src/biometric-core.ts'))?.[1];
     expect(webKey).toBeDefined();
     expect(bridgeKey).toBe(webKey);
   });

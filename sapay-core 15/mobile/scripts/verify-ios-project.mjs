@@ -2,6 +2,7 @@
 // `npx cap add ios && npm run cap:sync`; exits non-zero on the first problem.
 // Used by ios-packaging.yml, ios-simulator.yml and ios-testflight.yml so all
 // three validate the same thing, and runnable on Linux for local checks.
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -45,6 +46,32 @@ const [installedIcon, officialIcon] = await Promise.all([
   readFile(path.resolve('resources/AppIcon-1024.png')).catch(() => Buffer.alloc(0)),
 ]);
 check(officialIcon.length > 0 && installedIcon.equals(officialIcon), 'app icon is the official SApay monogram (resources/AppIcon-1024.png)');
+
+// Face ID dependency: GHSA-vx5f-vmr6-32wf affects @capgo/capacitor-native-biometric < 8.3.6,
+// and the Face ID-bound Keychain API used by src/biometric-core.ts needs >= 8.6
+// (getSecureCredentials, AccessControl). Check what is actually installed.
+const installedVersion = async (pkg) => JSON.parse((await read(`node_modules/${pkg}/package.json`)) || '{}').version ?? '';
+const atLeast = (version, minimum) => {
+  const a = version.split('.').map(Number); const b = minimum.split('.').map(Number);
+  for (let i = 0; i < 3; i += 1) { if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0); }
+  return true;
+};
+const biometricVersion = await installedVersion('@capgo/capacitor-native-biometric');
+check(atLeast(biometricVersion, '8.9.3'), `biometric plugin is >= 8.9.3, outside GHSA-vx5f-vmr6-32wf (found: ${biometricVersion || 'none'})`);
+const capIosVersion = await installedVersion('@capacitor/ios');
+check(capIosVersion.startsWith('8.'), `Capacitor iOS is 8.x (found: ${capIosVersion || 'none'})`);
+const targets = [...new Set([...pbxproj.matchAll(/IPHONEOS_DEPLOYMENT_TARGET = ([^;]+);/g)].map((m) => m[1]))];
+check(targets.length === 1 && targets[0] === '15.0', `iOS deployment target is 15.0 (found: ${targets.join(', ') || 'none'})`);
+// Capacitor 8 defaults to SPM, which has no App.xcworkspace; the workflows
+// build -workspace ios/App/App.xcworkspace, so require the CocoaPods template.
+// (contents.xcworkspacedata itself is written later by pod install.)
+const podfile = await read('ios/App/Podfile');
+check(podfile.includes("platform :ios, '15.0'") && existsSync(path.resolve('ios/App/App.xcworkspace')) && !existsSync(path.resolve('ios/App/CapApp-SPM')),
+  'CocoaPods project with App.xcworkspace (cap add ios --packagemanager CocoaPods)');
+// Unit tests (test/biometric-bridge.spec.ts) assert the bridge never uses the
+// unprotected read; here confirm the bundled bridge is the Face ID-bound one.
+check(bridge.includes('getSecureCredentials') && bridge.includes('accessControl'),
+  'bundled Face ID bridge uses the Face ID-bound Keychain (getSecureCredentials, accessControl)');
 
 if (failures.length) {
   for (const f of failures) console.error(`FAIL ${f}`);
