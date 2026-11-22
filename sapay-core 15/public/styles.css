@@ -278,3 +278,166 @@ input::placeholder{color:#777166}input:focus,select:focus{border-color:#d6b66b;b
     font-size: 10px;
   }
 }
+
+
+/* iPhone directory density: readable hierarchy without an endless wall of chips. */
+#appView .page-view[data-view="services"] .service-directory {
+  gap: 14px;
+  margin-top: 18px;
+}
+#appView .page-view[data-view="services"] .directory-panel {
+  padding: 16px;
+  border-radius: 18px;
+}
+#appView .page-view[data-view="services"] .directory-heading {
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 13px;
+}
+#appView .page-view[data-view="services"] .directory-heading > span {
+  flex: 0 0 36px;
+  min-width: 36px;
+  text-align: center;
+}
+#appView .page-view[data-view="services"] .directory-heading h3 {
+  font-size: 17px;
+  line-height: 1.5;
+}
+#appView .page-view[data-view="services"] .directory-heading p {
+  font-size: 12px;
+  line-height: 1.7;
+}
+#appView .page-view[data-view="services"] .directory-list {
+  gap: 8px;
+}
+#appView .page-view[data-view="services"] .directory-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+}
+#appView .page-view[data-view="services"] .directory-item b {
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+#appView .page-view[data-view="services"] .directory-item small {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  line-height: 1.6;
+}
+#appView .page-view[data-view="services"] .directory-item em {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  max-width: 132px;
+  text-align: center;
+  font-size: 10px;
+  white-space: normal;
+}
+#appView .page-view[data-view="services"] .institution-group {
+  margin-top: 16px;
+}
+#appView .page-view[data-view="services"] .institution-group h4 {
+  margin-bottom: 9px;
+  font-size: 14px;
+}
+#appView .page-view[data-view="services"] .institution-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 3px 7px;
+  scrollbar-width: thin;
+  scrollbar-color: #80683c #171819;
+}
+#appView .page-view[data-view="services"] .institution-chip {
+  min-width: 0;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 10px;
+  border-radius: 11px;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+#appView .page-view[data-view="services"] .directory-search-label {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+#appView .page-view[data-view="services"] .directory-search {
+  min-height: 46px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  font-size: 16px;
+}
+#appView .page-view[data-view="services"] #sudanBanks,
+#appView .page-view[data-view="services"] #globalDestinations {
+  max-height: 360px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-inline-end: 3px;
+  scrollbar-width: thin;
+  scrollbar-color: #80683c #171819;
+}
+#appView .page-view[data-view="services"] .directory-footnote {
+  margin-top: 12px;
+  font-size: 11px;
+  line-height: 1.8;
+}
+@media (max-width: 390px) {
+  #appView .page-view[data-view="services"] .directory-panel {
+    padding: 13px;
+  }
+  #appView .page-view[data-view="services"] .directory-item {
+    padding: 10px;
+  }
+  #appView .page-view[data-view="services"] .directory-item b {
+    font-size: 13px;
+  }
+  #appView .page-view[data-view="services"] .institution-chips {
+    max-height: 240px;
+    gap: 6px;
+  }
+  #appView .page-view[data-view="services"] .institution-chip {
+    min-height: 40px;
+    padding: 7px 8px;
+    font-size: 11px;
+  }
+}
+
+
+/* Compact service directory: show a short preview and expand on demand. */
+#appView .page-view[data-view="services"] .directory-expand {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  margin-top: 9px;
+  padding: 9px 12px;
+  border: 1px solid #80683c;
+  border-radius: 11px;
+  background: #211c13;
+  color: #e8ca80;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+#appView .page-view[data-view="services"] .directory-expand[hidden] {
+  display: none;
+}
+#appView .page-view[data-view="services"] .institution-chips,
+#appView .page-view[data-view="services"] #sudanBanks,
+#appView .page-view[data-view="services"] #globalDestinations {
+  max-height: none;
+  overflow: visible;
+}
