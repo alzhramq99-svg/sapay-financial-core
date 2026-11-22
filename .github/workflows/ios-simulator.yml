@@ -31,7 +31,7 @@ jobs:
         run: npm run copy:web
 
       - name: Generate Capacitor iOS project
-        run: npx cap add ios --packagemanager CocoaPods
+        run: npm run cap:add:ios
 
       - name: Build unsigned iOS Simulator app
         run: npm run build:ios:simulator
@@ -40,21 +40,7 @@ jobs:
         run: node ./scripts/verify-ios-project.mjs
 
       - name: Verify simulator app
-        run: |
-          APP_PATH="build/DerivedData/Build/Products/Release-iphonesimulator/App.app"
-          test -d "$APP_PATH"
-          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist")
-          echo "CFBundleIdentifier: $BUNDLE_ID"
-          test "$BUNDLE_ID" = "com.saadaligroup.sapay"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$APP_PATH/Info.plist"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :UIUserInterfaceStyle' "$APP_PATH/Info.plist")" = "Dark"
-          test -s "$APP_PATH/public/index.html"
-          test -s "$APP_PATH/public/biometric-bridge.js"
-          # Xcode compiles AppIcon.appiconset (the official SApay monogram,
-          # installed by configure-ios-icon.mjs) into the bundle.
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName' "$APP_PATH/Info.plist")" = "AppIcon"
-          test -s "$APP_PATH/Assets.car"
-          ls "$APP_PATH" | grep -i '^AppIcon' || true
+        run: bash scripts/verify-ios-app.sh build/DerivedData/Build/Products/Release-iphonesimulator/App.app
 
       - name: Archive sapay-ios-simulator (tar keeps executable permissions)
         # upload-artifact does not preserve file permissions, so an App.app

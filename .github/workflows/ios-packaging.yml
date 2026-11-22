@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - deploy/render-staging
+      - 'fix/ios-beta-*'
     paths:
       - 'sapay-core 15/mobile/**'
       - 'sapay-core 15/public/**'
@@ -42,7 +43,7 @@ jobs:
         # matches what ships to TestFlight.
         run: |
           npm run copy:web
-          npx cap add ios --packagemanager CocoaPods
+          npm run cap:add:ios
           npm run cap:sync
       - name: Verify generated iOS project
         run: node ./scripts/verify-ios-project.mjs
@@ -55,6 +56,8 @@ jobs:
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: Verify simulator app
+        run: bash scripts/verify-ios-app.sh build/DerivedData/Build/Products/Release-iphonesimulator/App.app
       - name: Archive sapay-ios-simulator (tar keeps executable permissions)
         # upload-artifact does not preserve file permissions, so an App.app
         # uploaded as a folder loses its executable bit.
@@ -77,6 +80,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             build
+      - name: Verify unsigned device app
+        run: bash scripts/verify-ios-app.sh build/DeviceDerivedData/Build/Products/Release-iphoneos/App.app
       - name: Archive sapay-ios-device-unsigned (tar keeps executable permissions)
         # upload-artifact does not preserve file permissions, so an App.app
         # uploaded as a folder loses its executable bit.
