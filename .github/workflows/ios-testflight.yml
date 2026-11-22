@@ -45,7 +45,7 @@ jobs:
         run: |
           npm ci
           npm run copy:web
-          npx cap add ios --packagemanager CocoaPods
+          npm run cap:add:ios
           npm run cap:sync
           node ./scripts/verify-ios-project.mjs
 
@@ -117,6 +117,9 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID" \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             archive
+
+      - name: Verify archived app before exporting
+        run: bash scripts/verify-ios-app.sh "$RUNNER_TEMP/SApay.xcarchive/Products/Applications/App.app"
 
       - name: Export App Store IPA
         env:
