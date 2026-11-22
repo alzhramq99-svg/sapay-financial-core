@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { DatabaseService } from '../database/database.service';
 const scrypt = promisify(scryptCallback);
@@ -52,22 +52,41 @@ export class AuthService {
       return { userId: payload.sub };
     } catch { throw new UnauthorizedException('Invalid or expired access token'); }
   }
-  async register(input: { email: string; password: string }) {
+  async register(input: { email: string; password: string; inviteCode?: string }) {
     const email = typeof input?.email === 'string' ? input.email.trim().toLowerCase() : '';
     const password = input?.password;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new BadRequestException('A valid email is required');
     if (typeof password !== 'string' || password.length < 12 || password.length > 128) throw new BadRequestException('Password must be 12–128 characters');
+    const inviteCode = input?.inviteCode;
+    const invalidInvitation = 'Invitation code is invalid, expired, or already used';
+    if (typeof inviteCode !== 'string' || !/^[A-Za-z0-9_-]{32,128}$/.test(inviteCode)) {
+      throw new BadRequestException(invalidInvitation);
+    }
+    const codeHash = createHash('sha256').update(inviteCode).digest('hex');
     const passwordHash = await this.hashPassword(password);
     try {
-      const result = await this.db.query(`INSERT INTO app_users (external_ref,email,password_hash) VALUES ($1,$1,$2) RETURNING id,email`,[email,passwordHash]);
-      const user = result.rows[0];
-      if (!user) throw new Error('User registration did not return a record');
+      const user = await this.db.withTransaction(async (client) => {
+        const claimed = await client.query(
+          'UPDATE beta_invitations SET used_at=now() WHERE code_hash=$1 AND used_at IS NULL AND expires_at > now() RETURNING id',
+          [codeHash],
+        );
+        if (claimed.rowCount !== 1) throw new BadRequestException(invalidInvitation);
+        const created = await client.query(
+          'INSERT INTO app_users (external_ref,email,password_hash) VALUES ($1,$1,$2) RETURNING id,email',
+          [email,passwordHash],
+        );
+        const record = created.rows[0];
+        if (!record) throw new Error('User registration did not return a record');
+        await client.query('UPDATE beta_invitations SET used_by=$1 WHERE id=$2', [record.id,claimed.rows[0].id]);
+        return record;
+      });
       return { user:{id:user.id,email:user.email}, accessToken:this.issueToken(user.id), tokenType:'Bearer', expiresIn:TTL };
     } catch (error: any) {
       if (error?.code === '23505') throw new ConflictException('An account with this email already exists');
       throw error;
     }
   }
+
   async login(input: { email: string; password: string }) {
     const email = typeof input?.email === 'string' ? input.email.trim().toLowerCase() : '';
     const password = typeof input?.password === 'string' ? input.password : '';

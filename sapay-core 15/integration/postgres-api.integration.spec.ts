@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { Client } from 'pg';
@@ -101,15 +101,58 @@ describe('PostgreSQL API integration (isolated test database only)', () => {
   let app: INestApplication | undefined;
   let baseUrl: string;
   let accessToken: string;
+  // Isolate each integration case from the prior case's per-IP rate-limit window.
+  // Advance the middleware clock between tests; issue a fresh JWT for each test window.
+  const realNow = Date.now.bind(Date);
+  let testWindow = 0;
+  beforeEach(async () => {
+    testWindow += 1;
+    jest.spyOn(Date, 'now').mockImplementation(() => realNow() + testWindow * 61_000);
+    // Mint a fresh bearer token inside the same test clock window.
+    const code = randomUUID().replace(/-/g, '');
+    await seedInvitation(code);
+    const registration = await registerWithCode(`integration-${randomUUID()}@example.test`, code);
+    expect(registration.status).toBe(201);
+    accessToken = (registration.body as { accessToken?: string }).accessToken!;
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  async function seedInvitation(code: string, expires: string = '1 day') {
+    const client = new Client({ connectionString: integrationDatabaseUrl });
+    await client.connect();
+    try {
+      const result = await client.query<{ id: string }>(
+        "INSERT INTO beta_invitations (code_hash, expires_at) VALUES ($1, now() + $2::interval) RETURNING id",
+        [createHash('sha256').update(code).digest('hex'), expires],
+      );
+      return result.rows[0]!.id;
+    } finally { await client.end(); }
+  }
+
+  async function invitationState(id: string) {
+    const client = new Client({ connectionString: integrationDatabaseUrl });
+    await client.connect();
+    try {
+      const result = await client.query<{ used_at: string | null; used_by: string | null }>(
+        'SELECT used_at, used_by FROM beta_invitations WHERE id=$1', [id],
+      );
+      return result.rows[0]!;
+    } finally { await client.end(); }
+  }
+
+  async function registerWithCode(email: string, inviteCode?: string) {
+    const response = await fetch(baseUrl + '/api/auth/register', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password: 'integration-password-2026', inviteCode }),
+    });
+    return { status: response.status, body: await response.json() as { message?: string; user?: { id: string }; accessToken?: string } };
+  }
 
   beforeAll(async () => {
     app = await createIntegrationApplication(integrationDatabaseUrl);
     app.setGlobalPrefix('api');
     await app.listen(0, '127.0.0.1');
     baseUrl = await app.getUrl();
-    const registration = await fetch(`${baseUrl}/api/auth/register`, { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({email:`integration-${randomUUID()}@example.test`,password:'integration-password-2026'}) });
-    expect(registration.status).toBe(201);
-    accessToken = (await registration.json() as {accessToken:string}).accessToken;
   });
 
   afterAll(async () => {
@@ -161,6 +204,57 @@ describe('PostgreSQL API integration (isolated test database only)', () => {
       }),
     });
   }
+
+  it('rejects missing, invalid, expired and used invitations with one generic message', async () => {
+    const expiredCode = randomUUID().replace(/-/g, '');
+    await seedInvitation(expiredCode, '-1 day');
+    const usedCode = randomUUID().replace(/-/g, '');
+    await seedInvitation(usedCode);
+    expect((await registerWithCode('used-first-' + randomUUID() + '@example.test', usedCode)).status).toBe(201);
+    const attempts = [undefined, 'bad', randomUUID().replace(/-/g, ''), expiredCode];
+    for (const inviteCode of attempts) {
+      // Each invalid-code probe must reach the controller, not the shared 5/minute IP limiter.
+      testWindow += 1;
+      const result = await registerWithCode('rejected-' + randomUUID() + '@example.test', inviteCode);
+      expect(result.status).toBe(400);
+      expect(result.body.message).toBe('Invitation code is invalid, expired, or already used');
+    }
+  });
+
+  it('rejects an already-used invitation with the same generic message', async () => {
+    const code = randomUUID().replace(/-/g, '');
+    await seedInvitation(code);
+    expect((await registerWithCode('first-' + randomUUID() + '@example.test', code)).status).toBe(201);
+    const result = await registerWithCode('second-' + randomUUID() + '@example.test', code);
+    expect(result.status).toBe(400);
+    expect(result.body.message).toBe('Invitation code is invalid, expired, or already used');
+  });
+
+  it('atomically permits exactly one registration when the same code is submitted concurrently', async () => {
+    const code = randomUUID().replace(/-/g, '');
+    const invitationId = await seedInvitation(code);
+    const [first, second] = await Promise.all([
+      registerWithCode('race-one-' + randomUUID() + '@example.test', code),
+      registerWithCode('race-two-' + randomUUID() + '@example.test', code),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([201, 400]);
+    const state = await invitationState(invitationId);
+    expect(state.used_at).not.toBeNull();
+    expect(state.used_by).toBe(first.status === 201 ? first.body.user?.id : second.body.user?.id);
+  });
+
+  it('rolls back the invitation claim when registration fails on duplicate email', async () => {
+    const email = 'rollback-' + randomUUID() + '@example.test';
+    const firstCode = randomUUID().replace(/-/g, '');
+    await seedInvitation(firstCode);
+    expect((await registerWithCode(email, firstCode)).status).toBe(201);
+    const retryCode = randomUUID().replace(/-/g, '');
+    const retryId = await seedInvitation(retryCode);
+    const failed = await registerWithCode(email, retryCode);
+    expect(failed.status).toBe(409);
+    expect(await invitationState(retryId)).toEqual({ used_at: null, used_by: null });
+    expect((await registerWithCode('retry-' + randomUUID() + '@example.test', retryCode)).status).toBe(201);
+  });
 
   it('accepts a copied wallet ID with its visible ID: label and rejects malformed UUIDs cleanly', async () => {
     const runId = randomUUID();
@@ -406,7 +500,9 @@ describe('PostgreSQL API integration (isolated test database only)', () => {
     const walletId = await createWallet(`auth-owner-${runId}`);
     const noToken = await fetch(`${baseUrl}/api/demo/wallets`);
     expect(noToken.status).toBe(401);
-    const second = await fetch(`${baseUrl}/api/auth/register`, {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:`other-${runId}@example.test`,password:'another-secure-password-2026'})});
+    const otherCode = randomUUID().replace(/-/g, '');
+    await seedInvitation(otherCode);
+    const second = await fetch(`${baseUrl}/api/auth/register`, {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:`other-${runId}@example.test`,password:'another-secure-password-2026',inviteCode:otherCode})});
     expect(second.status).toBe(201);
     const otherToken = (await second.json() as {accessToken:string}).accessToken;
     const login = await fetch(`${baseUrl}/api/auth/login`, {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:`other-${runId}@example.test`,password:'another-secure-password-2026'})});
@@ -425,8 +521,7 @@ describe('PostgreSQL API integration (isolated test database only)', () => {
 
   it('rate limits repeated login attempts', async () => {
     const attempts = await Promise.all(Array.from({length:6}, () => fetch(`${baseUrl}/api/auth/login?probe=rate-limit-test`, {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:'nobody@example.test',password:'wrong-password'})})));
-    expect(attempts.slice(0,4).every(r => r.status === 401)).toBe(true);
-    expect(attempts[4]!.status).toBe(429);
+    expect(attempts.slice(0,5).every(r => r.status === 401)).toBe(true);
     expect(attempts[5]!.status).toBe(429);
   });
 
