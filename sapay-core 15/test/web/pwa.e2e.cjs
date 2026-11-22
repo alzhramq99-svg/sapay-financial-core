@@ -73,9 +73,10 @@ const results = []; const check = (name, ok, extra='') => { results.push(`${ok ?
   check('login shows dashboard with wallet', await page.locator('#appView').isVisible());
   check('external transfer button hidden', (await page.locator('[data-external]').count()) === 0);
   check('internal transfer button still present', (await page.locator('[data-send]').count()) === 1);
-  check('demo notice visible', (await page.textContent('#appView')).includes('لا توجد تحويلات بنكية أو أموال حقيقية'));
+  check('demo notice visible', (await page.textContent('#appView')).includes('لا إرسال أو استقبال لأموال حقيقية'));
   // session expiry
-  apiMode = '401'; await page.click('[data-page="history"]'); await page.click('#refreshBtn'); await page.waitForTimeout(400);
+  // History is reached from the "المزيد" (more) page in the approved layout (PR #33).
+  apiMode = '401'; await page.click('.app-nav [data-page="more"]'); await page.click('[data-view="more"] [data-go="history"]'); await page.click('#refreshBtn'); await page.waitForTimeout(400);
   check('401 logs out to login view', await page.locator('#authView').isVisible());
   // offline launch: browser offline, reload served from SW cache
   await ctx.setOffline(true); await page.reload(); await page.waitForTimeout(300);

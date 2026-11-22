@@ -1,4 +1,4 @@
-// Regression test for the blank iPhone dashboard (all nine sections, wallets,
+// Regression test for the blank iPhone dashboard (all nine sections plus the more page, wallets,
 // history, card controls) in portrait and landscape, against a mocked API.
 //
 // Chromium with iPhone 13 emulation; not a substitute for real Safari.
@@ -11,6 +11,10 @@ const http = require('http'); const fs = require('fs'); const path = require('pa
 const root = path.resolve(process.argv[2] || 'public');
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
 const SECTIONS = ['home', 'wallets', 'cards', 'transfers', 'services', 'history', 'support', 'account', 'settings'];
+// Approved layout (PR #33): four items in the bottom navigation; the other
+// sections are opened from the "المزيد" (more) page.
+const NAV_ITEMS = ['home', 'wallets', 'cards', 'more'];
+const MORE_SECTIONS = SECTIONS.filter((key) => !NAV_ITEMS.includes(key));
 const WALLET = { id: '11111111-1111-4111-8111-111111111111', currency: 'SDG', balanceMinor: '5000' };
 const JOURNAL = [{ type: 'DEMO_CREDIT', status: 'POSTED', createdAt: '2026-11-19T10:00:00Z', postings: [{ side: 'CREDIT', amountMinor: '5000', currency: 'SDG' }] }];
 
@@ -55,8 +59,10 @@ async function run(orientation, port, results) {
   const nav = await page.evaluate(() => [...document.querySelectorAll('.app-nav .nav-item')].map((b) => {
     const r = b.getBoundingClientRect(); return { page: b.dataset.page, visible: r.width > 0 && r.left >= 0 && r.right <= innerWidth };
   }));
-  check('nine navigation items', nav.length === 9, nav.map((n) => n.page).join(','));
-  check('all navigation items inside the viewport', nav.length === 9 && nav.every((n) => n.visible), nav.filter((n) => !n.visible).map((n) => n.page).join(','));
+  check('four navigation items: home, wallets, cards, more', nav.map((n) => n.page).join(',') === NAV_ITEMS.join(','), nav.map((n) => n.page).join(','));
+  check('all navigation items inside the viewport', nav.length === NAV_ITEMS.length && nav.every((n) => n.visible), nav.filter((n) => !n.visible).map((n) => n.page).join(','));
+  const moreLinks = await page.evaluate(() => [...document.querySelectorAll('#appView .page-view[data-view="more"] [data-go]')].map((b) => b.dataset.go));
+  check('more page links to every section not in the navigation', MORE_SECTIONS.every((key) => moreLinks.includes(key)), moreLinks.join(','));
   // A sticky nav taller than a quarter of the viewport hides too much content
   // while scrolling, which matters most in landscape.
   const navShare = await page.evaluate(() => document.querySelector('.app-nav').getBoundingClientRect().height / innerHeight);
@@ -64,9 +70,13 @@ async function run(orientation, port, results) {
   check('no horizontal page overflow', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   check('total balance visible on home', await page.locator('#totalBalance').isVisible() && (await page.textContent('#totalBalance')).includes('5,000'));
 
-  for (const key of SECTIONS) {
-    const clicked = await page.click(`.app-nav [data-page="${key}"]`, { timeout: 3000 }).then(() => true, () => false);
-    if (!clicked) { check(`section "${key}" reachable from navigation`, false, 'nav item not clickable'); continue; }
+  const clickable = (selector) => page.click(selector, { timeout: 3000 }).then(() => true, () => false);
+  for (const key of [...SECTIONS, 'more']) {
+    const viaMore = MORE_SECTIONS.includes(key);
+    const clicked = viaMore
+      ? await clickable('.app-nav [data-page="more"]') && await clickable(`#appView .page-view[data-view="more"] [data-go="${key}"]`)
+      : await clickable(`.app-nav [data-page="${key}"]`);
+    if (!clicked) { check(`section "${key}" reachable from ${viaMore ? 'the more page' : 'navigation'}`, false, 'item not clickable'); continue; }
     await page.waitForTimeout(150);
     const state = await page.evaluate((k) => {
       const active = [...document.querySelectorAll('#appView .page-view')].filter((p) => getComputedStyle(p).display !== 'none' && !p.hidden);

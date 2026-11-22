@@ -50,6 +50,11 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :UIUserInterfaceStyle' "$APP_PATH/Info.plist")" = "Dark"
           test -s "$APP_PATH/public/index.html"
           test -s "$APP_PATH/public/biometric-bridge.js"
+          # Xcode compiles AppIcon.appiconset (the official SApay monogram,
+          # installed by configure-ios-icon.mjs) into the bundle.
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName' "$APP_PATH/Info.plist")" = "AppIcon"
+          test -s "$APP_PATH/Assets.car"
+          ls "$APP_PATH" | grep -i '^AppIcon' || true
 
       - name: Archive sapay-ios-simulator (tar keeps executable permissions)
         # upload-artifact does not preserve file permissions, so an App.app
