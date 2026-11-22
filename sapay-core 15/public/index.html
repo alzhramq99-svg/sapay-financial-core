@@ -43,6 +43,7 @@
           <p id="authHint" class="muted">سجّل الدخول للوصول إلى محفظتك التجريبية.</p>
           <label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com">
           <label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required minlength="12" maxlength="128" placeholder="12 حرفًا على الأقل">
+          <div id="inviteField" hidden><label for="inviteCode">رمز دعوة النسخة التجريبية</label><input id="inviteCode" type="text" autocomplete="off" minlength="32" maxlength="128" placeholder="أدخل رمز الدعوة"></div>
           <button class="primary full" id="authSubmit" type="submit">دخول آمن</button>
           <button class="biometric-login" id="faceIdLogin" type="button" hidden><span aria-hidden="true">◉</span> تسجيل الدخول باستخدام Face ID</button>
           <p id="biometricMessage" class="form-message" role="status" aria-live="polite"></p>
