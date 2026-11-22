@@ -31,7 +31,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: 'sapay-core 15/mobile/package-lock.json'
       - name: Install Capacitor dependencies
@@ -42,7 +42,7 @@ jobs:
         # matches what ships to TestFlight.
         run: |
           npm run copy:web
-          npx cap add ios
+          npx cap add ios --packagemanager CocoaPods
           npm run cap:sync
       - name: Verify generated iOS project
         run: node ./scripts/verify-ios-project.mjs

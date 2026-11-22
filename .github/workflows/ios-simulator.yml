@@ -20,7 +20,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: 'sapay-core 15/mobile/package-lock.json'
 
@@ -31,7 +31,7 @@ jobs:
         run: npm run copy:web
 
       - name: Generate Capacitor iOS project
-        run: npx cap add ios
+        run: npx cap add ios --packagemanager CocoaPods
 
       - name: Build unsigned iOS Simulator app
         run: npm run build:ios:simulator
