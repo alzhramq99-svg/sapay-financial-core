@@ -182,3 +182,99 @@ input::placeholder{color:#777166}input:focus,select:focus{border-color:#d6b66b;b
  #appView .home-quick-actions .shortcut-card{min-height:88px}
  #appView .promo-card-art{width:92px;flex-basis:92px;height:72px}
 }
+
+
+/* iPhone service-directory contrast and navigation correction.
+   Keep the SApay obsidian/gold identity while ensuring every directory label
+   remains readable on dark surfaces and the bottom navigation never covers
+   the content. */
+#appView { color: #f3efe5; }
+#appView .page-view[data-view="services"] { color: #f3efe5; }
+#appView .page-view[data-view="services"] .page-intro h2,
+#appView .page-view[data-view="services"] .directory-heading h3,
+#appView .page-view[data-view="services"] .institution-group h4 {
+  color: #f0d58d;
+}
+#appView .page-view[data-view="services"] .page-intro p,
+#appView .page-view[data-view="services"] .directory-heading p,
+#appView .page-view[data-view="services"] .directory-footnote,
+#appView .page-view[data-view="services"] .directory-search-label {
+  color: #c5bdaf;
+}
+#appView .page-view[data-view="services"] .directory-panel {
+  background: linear-gradient(145deg, #1a1b1c, #111213);
+  border-color: #55472e;
+}
+#appView .page-view[data-view="services"] .directory-item {
+  background: #202122;
+  border: 1px solid #302e29;
+}
+#appView .page-view[data-view="services"] .directory-item b {
+  color: #f4eddf;
+  font-size: 15px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+#appView .page-view[data-view="services"] .directory-item small {
+  color: #bdb5a8;
+}
+#appView .page-view[data-view="services"] .directory-item em {
+  color: #f0d58d;
+  background: #342b1c;
+}
+#appView .page-view[data-view="services"] .institution-chip {
+  color: #f4eddf;
+  background: #202122;
+  border-color: #665331;
+  line-height: 1.55;
+}
+#appView .page-view[data-view="services"] .directory-search {
+  color: #f4eddf;
+  background: #0d0e0f;
+  border-color: #665331;
+}
+#appView .page-view[data-view="services"] .directory-search::placeholder {
+  color: #aaa294;
+}
+#appView .page-view[data-view="services"] .directory-search:focus-visible,
+#appView .page-view[data-view="services"] .institution-chip:focus-visible {
+  outline: 2px solid #e8cd78;
+  outline-offset: 3px;
+}
+
+/* The nav is a true bottom bar on iPhone, not a sticky top overlay. */
+#appView { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+#appView .app-nav {
+  position: fixed;
+  top: auto;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(760px, calc(100% - 32px));
+  margin: 0;
+  z-index: 60;
+  background: rgba(20, 21, 22, .96);
+  border-color: #55472e;
+  box-shadow: 0 10px 34px #000b;
+  backdrop-filter: blur(18px);
+}
+#appView .app-nav .nav-item {
+  color: #c5bdaf;
+}
+#appView .app-nav .nav-item > span {
+  color: #e2c16c;
+}
+#appView .app-nav .nav-item.active {
+  color: #f4d98e;
+  background: #302819;
+}
+@media (max-width: 390px) {
+  #appView .app-nav {
+    width: calc(100% - 24px);
+    bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+  #appView .app-nav .nav-item {
+    font-size: 10px;
+  }
+}
