@@ -10,13 +10,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" href="/icons/sapay-192.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/sapay-180.png">
   <meta name="description" content="SApay — نموذج محفظة رقمية تجريبي للسودان">
   <title>SApay | محفظتك الرقمية التجريبية</title>
   <link rel="stylesheet" href="/styles.css">
   <script src="/runtime-config.js"></script>
   <script src="/app.js" defer></script>
-  <script>if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/service-worker.js").catch(() => {}));</script>
+  <script src="/sw-register.js" defer></script>
 </head>
 <body>
   <header class="topbar">
