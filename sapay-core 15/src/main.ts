@@ -21,7 +21,7 @@ async function bootstrap(): Promise<void> {
       else callback(new Error('Origin is not allowed by SApay CORS policy'));
     },
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
     credentials: false,
   });
   app.use(helmet());

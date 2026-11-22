@@ -19,7 +19,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys()
     .then((keys) => Promise.all(keys
-      .filter((key) => key !== CACHE_NAME && (key.startsWith('sapay-iphone-shell-') || key === 'sapay-beta-shell-v1'))
+      .filter((key) => key !== CACHE_NAME && (key.startsWith('sapay-iphone-shell-') || key.startsWith('sapay-beta-shell-')))
       .map((key) => caches.delete(key))))
     .then(() => self.clients.claim()));
 });
