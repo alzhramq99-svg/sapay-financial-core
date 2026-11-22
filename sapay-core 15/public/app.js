@@ -175,11 +175,72 @@ if (state.token) {
   if(historyHeading) pages.history.append(historyHeading);
   if(history) pages.history.append(history);
   const intro=(eyebrow,title,description)=>'<div class="page-intro"><div class="eyebrow">'+eyebrow+'</div><h2>'+title+'</h2><p>'+description+'</p></div>';
-  pages.cards.innerHTML=intro('بطاقات SApay','البطاقات الافتراضية','معاينة تصميمية لبطاقات دفع افتراضية؛ ليست بطاقات صادرة ولا تدعم الدفع أو Apple Pay أو ربط Visa/Mastercard.')+
+  // Card controls are a browser-session-only UI simulation; no card API or financial operations.
+  const demoCardKey='sapay_demo_card_ui_v1';
+  let demoCardState={visa:false,mastercard:false,events:[]};
+  try {
+    const saved=JSON.parse(sessionStorage.getItem(demoCardKey)||'null');
+    if(saved && typeof saved==='object'){
+      demoCardState.visa=saved.visa===true;
+      demoCardState.mastercard=saved.mastercard===true;
+      demoCardState.events=Array.isArray(saved.events)?saved.events.filter(e=>e&&['visa','mastercard'].includes(e.card)&&['freeze','unfreeze'].includes(e.action)&&typeof e.time==='string').slice(0,12):[];
+    }
+  } catch { /* Ignore malformed browser-session state. */ }
+  const cardNames={visa:'Visa',mastercard:'Mastercard'};
+  const persistDemoCards=()=>{try{sessionStorage.setItem(demoCardKey,JSON.stringify(demoCardState));}catch{/* storage optional */}};
+  const renderDemoCards=()=>{
+    const cards=pages.cards.querySelectorAll('[data-demo-card]');
+    cards.forEach(card=>{
+      const key=card.dataset.demoCard;
+      const frozen=demoCardState[key];
+      card.querySelector('[data-card-status]').textContent=frozen?'مجمّدة في المعاينة':'غير مفعّلة · نموذج';
+      card.querySelector('[data-card-toggle]').textContent=frozen?'إلغاء التجميد التجريبي':'تجميد تجريبي';
+      card.querySelector('[data-card-toggle]').setAttribute('aria-pressed',String(frozen));
+      card.classList.toggle('is-frozen',frozen);
+    });
+    const history=pages.cards.querySelector('#demoCardHistory');
+    if(!demoCardState.events.length){
+      history.textContent='لا توجد إجراءات تجريبية مسجلة في هذه الجلسة. لا توجد معاملات دفع حقيقية.';
+    }else{
+      history.replaceChildren();
+      demoCardState.events.forEach(e=>{
+        const row=document.createElement('div');row.className='demo-card-event';
+        const action=e.action==='freeze'?'تجميد':'إلغاء تجميد';
+        const label=document.createElement('strong');label.textContent=action+' نموذج '+cardNames[e.card];
+        const time=document.createElement('small');time.textContent=e.time;
+        row.append(label,time);history.append(row);
+      });
+    }
+  };
+  pages.cards.innerHTML=intro('بطاقات SApay','إدارة البطاقات الافتراضية','نماذج تفاعلية لأغراض اختبار الواجهة فقط. لا توجد بطاقات صادرة أو أرقام بطاقات أو عمليات دفع أو ربط Visa/Mastercard أو Apple Pay.')+
     '<div class="virtual-card-grid" aria-label="نماذج البطاقات الافتراضية">'+
-    '<article class="virtual-payment-card"><div class="virtual-card-top"><strong>SApay</strong><span>VISA · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span>غير مفعّلة</span></div></article>'+
-    '<article class="virtual-payment-card secondary"><div class="virtual-card-top"><strong>SApay</strong><span>Mastercard · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span>غير مفعّلة</span></div></article>'+
-    '</div><p class="virtual-card-warning">هذه نماذج واجهة فقط، وليست بطاقات Visa أو Mastercard حقيقية أو صادرة عن أي جهة. لا يمكن استخدامها للشراء أو التحويل أو شحن الأموال.</p>';
+    '<article class="virtual-card-manager" data-demo-card="visa"><div class="virtual-payment-card"><div class="virtual-card-top"><strong>SApay</strong><span>VISA · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="visa">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="visa">تجميد تجريبي</button></div></article>'+
+    '<article class="virtual-card-manager" data-demo-card="mastercard"><div class="virtual-payment-card secondary"><div class="virtual-card-top"><strong>SApay</strong><span>Mastercard · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="mastercard">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="mastercard">تجميد تجريبي</button></div></article>'+
+    '</div><section class="panel demo-card-details" id="demoCardDetails" aria-live="polite"><h3>تفاصيل البطاقة</h3><p>اختر «تفاصيل البطاقة» لعرض نوع النموذج وحالته. لا توجد بيانات بطاقة حقيقية أو CVV أو تاريخ انتهاء.</p></section>'+
+    '<section class="panel demo-card-history"><h3>سجل إجراءات البطاقات التجريبية</h3><div id="demoCardHistory" aria-live="polite"></div></section>'+
+    '<p class="virtual-card-warning">التجميد وإلغاء التجميد يغيّران حالة المعاينة على هذا المتصفح فقط، ولا يؤثران على أي بطاقة أو رصيد. السجل يخص إجراءات الواجهة وليس معاملات مالية.</p>';
+  pages.cards.addEventListener('click',e=>{
+    const details=e.target.closest('[data-card-details]');
+    if(details){
+      const key=details.dataset.cardDetails;
+      if(!Object.prototype.hasOwnProperty.call(cardNames,key))return;
+      const target=pages.cards.querySelector('#demoCardDetails');
+      target.replaceChildren();
+      const title=document.createElement('h3');title.textContent='تفاصيل نموذج '+cardNames[key];
+      const desc=document.createElement('p');desc.textContent='الحالة: '+(demoCardState[key]?'مجمّدة في المعاينة':'غير مفعّلة')+' · العملة: غير محددة · رقم البطاقة: غير متاح · CVV: غير متاح · تاريخ الانتهاء: غير متاح · الدفع: غير متاح.';
+      target.append(title,desc);return;
+    }
+    const toggle=e.target.closest('[data-card-toggle]');
+    if(!toggle)return;
+    const key=toggle.dataset.cardToggle;
+    if(!Object.prototype.hasOwnProperty.call(cardNames,key))return;
+    demoCardState[key]=!demoCardState[key];
+    demoCardState.events.unshift({card:key,action:demoCardState[key]?'freeze':'unfreeze',time:new Date().toLocaleString('ar')});
+    demoCardState.events=demoCardState.events.slice(0,12);
+    persistDemoCards();renderDemoCards();
+    toast('تم تحديث حالة نموذج '+cardNames[key]+' داخل هذه الجلسة فقط.');
+  });
+  renderDemoCards();
   pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
     '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
     '<div class="notice">لا يدعم هذا النموذج التحويل إلى بنك أو محفظة خارجية، ولا ينفّذ أي حركة مالية حقيقية.</div>';
