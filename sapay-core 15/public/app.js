@@ -26,6 +26,38 @@ async function api(path, options = {}) {
   return data;
 }
 function message(id, text, ok = false) { const el = $(id); el.textContent = text || ''; el.classList.toggle('success', !!ok); }
+// Native Face ID is opt-in and uses iOS Keychain protected by the current biometric set.
+const biometricServer='sapay-financial-core';
+async function enrollFaceId(email,password){
+  if(!window.SApayBiometric?.isNative || state.authMode!=='login')return;
+  try{
+    if(!(await window.SApayBiometric.isAvailable()))return;
+    if(window.confirm('هل تريد تفعيل تسجيل الدخول باستخدام Face ID على هذا الجهاز؟')){
+      await window.SApayBiometric.saveCredentials(email,password,biometricServer);
+      message('biometricMessage','تم تفعيل Face ID على هذا الجهاز.',true);
+      $('faceIdLogin').hidden=false;
+    }
+  }catch{message('biometricMessage','تعذر تفعيل Face ID. يمكنك استخدام كلمة المرور.');}
+}
+async function initializeFaceId(){
+  if(!window.SApayBiometric?.isNative)return;
+  try{$('faceIdLogin').hidden=!(await window.SApayBiometric.hasCredentials(biometricServer));}
+  catch{$('faceIdLogin').hidden=true;}
+}
+$('faceIdLogin').addEventListener('click',async()=>{
+  const button=$('faceIdLogin');button.disabled=true;
+  message('biometricMessage','يرجى تأكيد هويتك عبر Face ID…');
+  try{
+    if(!window.SApayBiometric?.isNative)throw Error('Face ID متاح في تطبيق iOS فقط.');
+    const credentials=await window.SApayBiometric.getCredentials(biometricServer);
+    const result=await api('/auth/login',{method:'POST',body:JSON.stringify({email:credentials.username,password:credentials.password})});
+    state.token=result.accessToken;state.user=result.user;
+    sessionStorage.setItem('sapay_access_token',state.token);
+    await showDashboard();
+  }catch(error){message('biometricMessage',error.message||'تعذر استخدام Face ID. استخدم كلمة المرور.');}
+  finally{button.disabled=false;}
+});
+initializeFaceId();
 function toast(text) { const el = $('toast'); el.textContent = text; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2600); }
 function setAuthMode(mode) {
   state.authMode = mode;
@@ -45,6 +77,7 @@ $('authForm').addEventListener('submit', async (event) => {
     const result = await api('/auth/' + (state.authMode === 'login' ? 'login' : 'register'), { method: 'POST', body: JSON.stringify({ email: $('email').value.trim(), password: $('password').value }) });
     state.token = result.accessToken; state.user = result.user; sessionStorage.setItem('sapay_access_token', state.token);
     await showDashboard();
+    if(state.authMode==='login') await enrollFaceId($('email').value.trim(),$('password').value);
   } catch (error) { message('authMessage', error.message); }
   finally { button.disabled = false; }
 });
