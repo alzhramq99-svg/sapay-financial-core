@@ -5,6 +5,9 @@ const config: CapacitorConfig = {
   appName: 'SApay',
   webDir: 'www',
   bundledWebRuntime: false,
+  android: {
+    backgroundColor: '#0A0A0A',
+  },
   ios: {
     contentInset: 'automatic',
     backgroundColor: '#0A0A0A',
