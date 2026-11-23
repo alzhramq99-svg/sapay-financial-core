@@ -1,5 +1,7 @@
 import AppKit
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 
 // Faithful native rasterization of the existing SApay SVG icon:
 // public/icons/sapay-512.svg. No external renderer or binary asset required.
@@ -13,17 +15,16 @@ func rgb(_ hex: UInt32) -> NSColor {
           green: CGFloat((hex >> 8) & 255) / 255,
           blue: CGFloat(hex & 255) / 255, alpha: 1)
 }
-guard let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: size, pixelsHigh: size,
-                                    bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: false,
-                                    isPlanar: false, colorSpaceName: .deviceRGB,
-                                    bytesPerRow: 0, bitsPerPixel: 32),
-      let context = NSGraphicsContext(bitmapImageRep: bitmap) else {
-  fatalError("Cannot initialize RGB icon bitmap")
+guard let cgContext = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8,
+                                bytesPerRow: size * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else {
+  fatalError("Cannot initialize opaque RGB graphics context")
 }
+let context = NSGraphicsContext(cgContext: cgContext, flipped: false)
 NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = context
 context.imageInterpolation = .high
-context.cgContext.scaleBy(x: scale, y: scale)
+cgContext.scaleBy(x: scale, y: scale)
 
 rgb(0x102a43).setFill()
 NSBezierPath(roundedRect: NSRect(x: 0, y: 0, width: 512, height: 512), xRadius: 112, yRadius: 112).fill()
@@ -50,8 +51,12 @@ dash.stroke()
 
 context.flushGraphics()
 NSGraphicsContext.restoreGraphicsState()
-guard let png = bitmap.representation(using: .png, properties: [:]) else {
-  fatalError("Cannot encode icon as PNG")
+guard let image = cgContext.makeImage(),
+      let destination = CGImageDestinationCreateWithURL(output as CFURL, UTType.png.identifier as CFString, 1, nil) else {
+  fatalError("Cannot create PNG image")
 }
-try png.write(to: output)
-print("Generated RGB SApay app icon: \\(output.path)")
+CGImageDestinationAddImage(destination, image, nil)
+guard CGImageDestinationFinalize(destination) else {
+  fatalError("Cannot write PNG image")
+}
+print("Generated opaque RGB SApay icon: \\(output.path)")
