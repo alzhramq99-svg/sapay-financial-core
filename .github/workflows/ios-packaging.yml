@@ -37,7 +37,7 @@ jobs:
           npm run cap:sync
       - name: Build iOS Simulator app
         run: |
-          xcodebuild -workspace ios/App/App.xcworkspace \
+          xcodebuild -project ios/App/App.xcodeproj \
             -scheme App \
             -sdk iphonesimulator \
             -configuration Release \
@@ -53,7 +53,7 @@ jobs:
           retention-days: 7
       - name: Build unsigned iPhone device app
         run: |
-          xcodebuild -workspace ios/App/App.xcworkspace \
+          xcodebuild -project ios/App/App.xcodeproj \
             -scheme App \
             -sdk iphoneos \
             -configuration Release \
