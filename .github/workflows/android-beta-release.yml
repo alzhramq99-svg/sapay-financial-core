@@ -1,0 +1,47 @@
+name: Publish SApay Android Beta APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-beta:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 'sapay-core 15/mobile'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify Android SDK
+        run: test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+      - name: Build SApay beta APK from current source
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false @capacitor/android@8.6.2
+          npm run copy:web
+          npm run build:biometric
+          npx cap add android
+          npx cap sync android
+          chmod +x android/gradlew
+          (cd android && ./gradlew --no-daemon assembleDebug)
+          cp android/app/build/outputs/apk/debug/app-debug.apk "${GITHUB_WORKSPACE}/SApay-Android-Beta.apk"
+      - name: Publish explicitly triggered pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd "${GITHUB_WORKSPACE}"
+          TAG="android-beta-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" "SApay-Android-Beta.apk" \
+            --target "${GITHUB_SHA}" \
+            --title "SApay Android Beta $TAG" \
+            --prerelease \
+            --notes "SApay experimental Android build for testing only. No real money transfers, deposits, or real payment cards. Debug-signed APK, not a production release."

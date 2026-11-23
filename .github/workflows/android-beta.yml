@@ -1,0 +1,59 @@
+name: Android Beta APK
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'sapay-core 15/mobile/**'
+      - 'sapay-core 15/public/**'
+      - '.github/workflows/android-beta.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  android-debug-apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 'sapay-core 15/mobile'
+    steps:
+      - name: Checkout SApay
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify preinstalled Android SDK
+        run: |
+          test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "Android SDK: ${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+      - name: Install existing dependencies
+        run: npm ci
+      - name: Install matching Android Capacitor platform
+        run: npm install --no-save --package-lock=false @capacitor/android@8.6.2
+      - name: Prepare SApay web assets and biometric bridge
+        run: |
+          npm run copy:web
+          npm run build:biometric
+      - name: Generate Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Build installable Android debug APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew --no-daemon assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SApay-Android-Beta-APK
+          path: 'sapay-core 15/mobile/android/app/build/outputs/apk/debug/app-debug.apk'
+          if-no-files-found: error
+          retention-days: 14
