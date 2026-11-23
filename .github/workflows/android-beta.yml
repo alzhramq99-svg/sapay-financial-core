@@ -29,8 +29,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Verify preinstalled Android SDK
+        run: |
+          test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "Android SDK: ${ANDROID_HOME:-/usr/local/lib/android/sdk}"
       - name: Install existing dependencies
         run: npm ci
       - name: Install matching Android Capacitor platform
