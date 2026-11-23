@@ -24,7 +24,7 @@ NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = context
 context.imageInterpolation = .high
 let transform = AffineTransform(scaleByX: scale, byY: scale)
-transform.concat()
+transform.set()
 
 rgb(0x102a43).setFill()
 NSBezierPath(roundedRect: NSRect(x: 0, y: 0, width: 512, height: 512), xRadius: 112, yRadius: 112).fill()
