@@ -3,7 +3,8 @@ const $ = (id) => document.getElementById(id);
 const state = { token: sessionStorage.getItem('sapay_access_token') || '', user: null, wallets: [], authMode: 'login' };
 const money = (minor) => { try { return BigInt(minor || '0').toLocaleString('en-US'); } catch { return '0'; } };
 const headers = () => ({ 'Content-Type': 'application/json', ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}) });
-const nativeRuntime = window.location.protocol === 'capacitor:';
+// Capacitor iOS WebViews commonly use https://localhost, not capacitor://. Detect the native bridge explicitly.
+const nativeRuntime = window.location.protocol === 'capacitor:' || window.Capacitor?.isNativePlatform?.() === true;
 const configuredApiBase = String(window.SAPAY_CONFIG?.apiBaseUrl || '').trim().replace(/\/+$/, '');
 function apiOrigin() {
   const base = configuredApiBase || (nativeRuntime ? '' : window.location.origin);
