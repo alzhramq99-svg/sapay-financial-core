@@ -14,9 +14,9 @@ func rgb(_ hex: UInt32) -> NSColor {
           blue: CGFloat(hex & 255) / 255, alpha: 1)
 }
 guard let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: size, pixelsHigh: size,
-                                    bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false,
+                                    bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: false,
                                     isPlanar: false, colorSpaceName: .deviceRGB,
-                                    bytesPerRow: 0, bitsPerPixel: 0),
+                                    bytesPerRow: 0, bitsPerPixel: 32),
       let context = NSGraphicsContext(bitmapImageRep: bitmap) else {
   fatalError("Cannot initialize RGB icon bitmap")
 }
