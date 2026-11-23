@@ -1,0 +1,52 @@
+name: Google Play signed Android AAB
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-aab:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 'sapay-core 15/mobile'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify Android SDK
+        run: test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+      - name: Install dependencies and generate Android project
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false @capacitor/android@8.6.2
+          npm run copy:web
+          npm run build:biometric
+          npx cap add android
+          npx cap sync android
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: node scripts/configure-android-release.mjs
+      - name: Build signed Google Play bundle
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew --no-daemon bundleRelease
+      - name: Upload signed AAB for manual Play Console submission
+        uses: actions/upload-artifact@v4
+        with:
+          name: SApay-Google-Play-signed-AAB
+          path: 'sapay-core 15/mobile/android/app/build/outputs/bundle/release/app-release.aab'
+          if-no-files-found: error
+          retention-days: 7
