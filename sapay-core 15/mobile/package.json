@@ -9,9 +9,9 @@
   "scripts": {
     "copy:web": "node ./scripts/copy-web-assets.mjs",
     "cap:add:ios": "cap add ios",
-    "cap:sync": "npm run build:biometric && npm run copy:web && cap sync ios && node ./scripts/configure-ios-faceid.mjs && node ./scripts/configure-ios-appearance.mjs && node ./scripts/configure-ios-icon.mjs",
+    "cap:sync": "npm run copy:web && npm run build:biometric && cap sync ios && node ./scripts/configure-ios-faceid.mjs && node ./scripts/configure-ios-appearance.mjs && node ./scripts/configure-ios-icon.mjs",
     "build:ios:simulator": "npm run cap:sync && xcodebuild -workspace ios/App/App.xcworkspace -scheme App -sdk iphonesimulator -configuration Release -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build",
-    "build:biometric": "esbuild src/biometric.ts --bundle --format=iife --target=es2020 --outfile=../public/biometric-bridge.js"
+    "build:biometric": "esbuild src/biometric.ts --bundle --format=iife --target=es2020 --outfile=www/biometric-bridge.js"
   },
   "dependencies": {
     "@capacitor/core": "^8.6.2",
