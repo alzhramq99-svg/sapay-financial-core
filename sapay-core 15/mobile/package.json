@@ -1,0 +1,23 @@
+{
+  "name": "sapay-ios-shell",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SApay iOS native shell powered by Capacitor",
+  "scripts": {
+    "copy:web": "node ./scripts/copy-web-assets.mjs",
+    "cap:add:ios": "cap add ios",
+    "cap:sync": "npm run build:biometric && npm run copy:web && cap sync ios && node ./scripts/configure-ios-faceid.mjs && node ./scripts/configure-ios-appearance.mjs",
+    "build:ios:simulator": "npm run cap:sync && xcodebuild -workspace ios/App/App.xcworkspace -scheme App -sdk iphonesimulator -configuration Release -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build",
+    "build:biometric": "esbuild src/biometric.ts --bundle --format=iife --target=es2020 --outfile=../public/biometric-bridge.js"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
+    "@capgo/capacitor-native-biometric": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "typescript": "^5.7.2",
+    "esbuild": "^0.25.0"
+  }
+}
