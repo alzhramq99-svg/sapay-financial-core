@@ -17,7 +17,15 @@ function apiOrigin() {
   return url.origin;
 }
 async function api(path, options = {}) {
-  const response = await fetch(apiOrigin() + '/api' + path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
+  const origin = apiOrigin();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+  let response;
+  try {
+    response = await fetch(origin + '/api' + path, { ...options, signal: controller.signal, headers: { ...headers(), ...(options.headers || {}) } });
+  } catch (error) {
+    throw new Error(error.name === 'AbortError' ? 'انتهت مهلة الاتصال بخادم SApay. حاول مرة أخرى.' : 'تعذر الاتصال بخادم SApay. تحقق من الإنترنت وحاول مرة أخرى.');
+  } finally { clearTimeout(timer); }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 401 && state.token) logout(false);
@@ -66,11 +74,14 @@ function setAuthMode(mode) {
   $('authTitle').textContent = mode === 'login' ? 'مرحبًا بعودتك' : 'أنشئ حساب SApay';
   $('authHint').textContent = mode === 'login' ? 'سجّل الدخول للوصول إلى محفظتك التجريبية.' : 'استخدم بريدًا تجريبيًا وكلمة مرور من 12 حرفًا على الأقل.';
   $('authSubmit').textContent = mode === 'login' ? 'دخول آمن' : 'إنشاء الحساب';
+  $('password').minLength = mode === 'login' ? 1 : 12;
   $('password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
   message('authMessage', '');
 }
 $('loginTab').addEventListener('click', () => setAuthMode('login'));
 $('registerTab').addEventListener('click', () => setAuthMode('register'));
+$('password').minLength = 1;
+$('authForm').addEventListener('invalid', () => message('authMessage', 'تحقق من البريد الإلكتروني وكلمة المرور ومتطلبات الحقول.'), true);
 $('authForm').addEventListener('submit', async (event) => {
   event.preventDefault(); const button = $('authSubmit'); button.disabled = true; message('authMessage', 'جارٍ التحقق…');
   try {
