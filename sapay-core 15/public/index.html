@@ -41,7 +41,7 @@
           <h2 id="authTitle">مرحبًا بعودتك</h2>
           <p id="authHint" class="muted">سجّل الدخول للوصول إلى محفظتك التجريبية.</p>
           <label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com">
-          <label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required minlength="12" maxlength="128" placeholder="12 حرفًا على الأقل">
+          <label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required minlength="12" maxlength="128" placeholder="كلمة المرور"><button type="button" class="outline-btn" id="togglePassword" aria-controls="password" aria-pressed="false">إظهار كلمة المرور</button>
           <button class="primary full" id="authSubmit" type="submit">دخول آمن</button>
           <button class="biometric-login" id="faceIdLogin" type="button" hidden>◉ تسجيل الدخول باستخدام Face ID</button>
           <p id="biometricMessage" class="form-message" role="status" aria-live="polite"></p>
