@@ -81,6 +81,13 @@ function setAuthMode(mode) {
 $('loginTab').addEventListener('click', () => setAuthMode('login'));
 $('registerTab').addEventListener('click', () => setAuthMode('register'));
 $('password').minLength = 1;
+$('togglePassword').addEventListener('click', () => {
+  const field = $('password'); const button = $('togglePassword');
+  const visible = field.type === 'password';
+  field.type = visible ? 'text' : 'password';
+  button.textContent = visible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور';
+  button.setAttribute('aria-pressed', String(visible));
+});
 $('authForm').addEventListener('invalid', () => message('authMessage', 'تحقق من البريد الإلكتروني وكلمة المرور ومتطلبات الحقول.'), true);
 $('authForm').addEventListener('submit', async (event) => {
   event.preventDefault(); const button = $('authSubmit'); button.disabled = true; message('authMessage', 'جارٍ التحقق…');
