@@ -187,6 +187,9 @@ $('actionForm').addEventListener('submit', async (event) => {
       if (!destination) throw new Error('أدخل معرّف محفظة المستلم.');
       if (!uuidPattern.test(destination)) throw new Error('معرّف المحفظة غير صحيح. الصق المعرّف كاملًا أو السطر الذي يبدأ بـ ID:.');
       const source = state.wallets.find(w => w.id === walletId);
+      if (!source) throw new Error('اختر محفظة مصدر صالحة.');
+      if (destination.toLowerCase() === walletId.toLowerCase()) throw new Error('اختر محفظة مستلم مختلفة.');
+      if (BigInt(amount) > BigInt(source.balanceMinor || '0')) throw new Error('الرصيد التجريبي غير كافٍ.');
       await api('/transfers', { method:'POST', headers:{'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({ fromWalletId:walletId, toWalletId:destination, amountMinor:amount, currency:source.currency }) });
     }
     $('actionDialog').close(); toast('تم تسجيل العملية في قاعدة البيانات التجريبية.'); await refreshData();
@@ -297,9 +300,16 @@ if (state.token) {
     toast('تم تحديث حالة نموذج '+cardNames[key]+' داخل هذه الجلسة فقط.');
   });
   renderDemoCards();
-  pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
-    '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>حدد المصدر والمستلم والمبلغ في نموذج التحويل.</p><button id="startTransferBtn" class="primary" type="button">فتح نموذج التحويل</button></div></div>'+
-    '<div class="notice">لا يدعم هذا النموذج التحويل إلى بنك أو محفظة خارجية، ولا ينفّذ أي حركة مالية حقيقية.</div>';
+  pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','تحويل تجريبي فقط · لا توجد أموال حقيقية')+
+    '<form id="inlineTransfer" class="panel directory-panel"><label for="inlineSource">محفظة المصدر</label><select id="inlineSource" class="directory-search" required></select><label for="inlineDestination">معرّف محفظة المستلم</label><input id="inlineDestination" class="directory-search" dir="ltr" required autocomplete="off"><label for="inlineAmount">المبلغ (بوحدات الرصيد التجريبي)</label><input id="inlineAmount" class="directory-search" inputmode="numeric" pattern="[1-9][0-9]*" required><button class="primary" type="submit">مراجعة التحويل</button><p id="inlineTransferMessage" role="status"></p></form>';
+  const populateTransfer=()=>{const select=$('inlineSource');select.innerHTML=state.wallets.map(w=>'<option value="'+escapeHtml(w.id)+'">'+escapeHtml(w.currency)+' · '+money(w.balanceMinor)+'</option>').join('');};
+  $('inlineTransfer').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(!state.wallets.length){message('inlineTransferMessage','أنشئ محفظة أولًا.');return;}
+    openAction('transfer',$('inlineSource').value);
+    $('destinationWallet').value=$('inlineDestination').value;
+    $('actionAmount').value=$('inlineAmount').value;
+  });
   pages.services.innerHTML=intro('منظومة خدمات السودان','الخدمات والمدفوعات','استعرض الجهات السودانية والخدمات المستهدفة. جميع خيارات السداد والربط معروضة للتعريف والتخطيط فقط، وليست متاحة للدفع الحقيقي.')+
     '<div class="service-grid">'+
     '<article class="service-card"><span>▤</span><h3>فواتير الاتصالات</h3><p>زين، سوداني، MTN، كنار</p><em>عرض الجهات</em></article>'+
@@ -328,6 +338,10 @@ if (state.token) {
     '<div class="institution-group"><h4>جامعات حكومية</h4><div id="publicInstitutions" class="institution-chips"></div></div>'+
     '<div class="institution-group"><h4>جامعات أهلية وخاصة وكليات</h4><div id="privateInstitutions" class="institution-chips"></div></div>'+
     '<p class="directory-footnote">الأسماء دليل أولي للتصنيف فقط. لم يتم ربط أي جامعة بنظام تحصيل الرسوم، ويجب اعتماد المؤسسات والبرامج والرسوم رسميًا قبل إتاحة الدفع.</p></section></div>';
+  const bankDirectory=document.createElement('section');
+  bankDirectory.className='directory-panel';
+  bankDirectory.innerHTML='<h3>دليل البنوك السودانية</h3><p>أمثلة تعريفية غير مرتبطة بنظام دفع. لا تمثل قائمة رسمية محدثة.</p><div class="institution-chips">'+['بنك الخرطوم','بنك فيصل الإسلامي السوداني','بنك أم درمان الوطني','بنك النيل','بنك البركة السودان','بنك التضامن الإسلامي','بنك السودان الفرنسي'].map(name=>'<span class="institution-chip">'+escapeHtml(name)+'</span>').join('')+'</div><p>التحويل المصرفي والدولي غير متاحين من هذه الواجهة حاليًا.</p>';
+  pages.services.querySelector('.service-directory').append(bankDirectory);
   const publicInstitutions=['جامعة الخرطوم','جامعة السودان للعلوم والتكنولوجيا','جامعة النيلين','جامعة بحري','جامعة أم درمان الإسلامية','جامعة الجزيرة','جامعة وادي النيل','جامعة شندي','جامعة كسلا','جامعة القضارف','جامعة البحر الأحمر','جامعة دنقلا','جامعة سنار','جامعة النيل الأزرق','جامعة كردفان','جامعة الفاشر','جامعة زالنجي','جامعة نيالا','جامعة بخت الرضا','جامعة القرآن الكريم والعلوم الإسلامية','جامعة الإمام المهدي','جامعة غرب كردفان','جامعة الدلنج','جامعة شرق كردفان','جامعة الجنينة','جامعة الضعين','جامعة المناقل','جامعة مروي التكنولوجية','جامعة السودان المفتوحة'];
   const privateInstitutions=['جامعة الأحفاد للبنات','جامعة السودان العالمية','جامعة أم درمان الأهلية','جامعة العلوم والتقانة','جامعة العلوم الطبية والتكنولوجيا','جامعة المستقبل','جامعة المغتربين','جامعة ود مدني الأهلية','الجامعة الوطنية','جامعة المشرق','جامعة الرازي','الجامعة العربية المفتوحة','جامعة قاردن سيتي','جامعة ابن سينا','جامعة الشيخ عبدالله البدري','جامعة النيل','جامعة البيان','جامعة النصر','جامعة الشرق للعلوم والتكنولوجيا','جامعة بورتسودان الأهلية','كلية شرق النيل','كلية المدار','كلية السودان الجامعية للبنات','أكاديمية السودان للعلوم المصرفية والمالية','كلية كمبوني للعلوم والتكنولوجيا','كلية الإمام الهادي','كلية غرب النيل','كلية بحري الأهلية','كلية أم درمان للعلوم والتكنولوجيا','كلية اليرموك','كلية الكاملين للعلوم والتقانة','كلية النور للعلوم والتكنولوجيا','كلية ستارز للعلوم الطبية والتقنية','كلية الحكمة للعلوم والتكنولوجيا','كلية النهضة','كلية الصفوة','كلية السلامة للعلوم والتكنولوجيا','كلية الريادة','كلية الأفق للعلوم والتكنولوجيا','كلية مكة التقنية لطب العيون','كلية نبتة','كلية الجزيرة للعلوم الطبية والتكنولوجيا','كلية الفجر للعلوم والتكنولوجيا','كلية فكتوريا للعلوم والتكنولوجيا','كلية القضارف للعلوم والتكنولوجيا','كلية المعرفة للعلوم والتكنولوجيا','كلية رويال للعلوم والتكنولوجيا','كلية شمال كردفان','كلية دار العلوم والتكنولوجيا','كلية المدائن للعلوم الطبية والتكنولوجيا'];
   const renderInstitutions=(items,root)=>{root.innerHTML=items.map(name=>'<button type="button" class="institution-chip" data-institution="'+escapeHtml(name)+'">'+escapeHtml(name)+'</button>').join('');};
@@ -359,15 +373,12 @@ if (state.token) {
   definitions.forEach(([key])=>root.append(pages[key]));
   const go=(key)=>{
     definitions.forEach(([name])=>{pages[name].classList.toggle('active',name===key);const button=nav.querySelector('[data-page="'+name+'"]');button.classList.toggle('active',name===key);if(name===key)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
+    if(key==='transfers') populateTransfer();
     if(key==='history') loadHistory();
     if(key==='account') $('accountEmail').textContent=state.user?.email||'حسابك التجريبي';
     window.scrollTo({top:0,behavior:'smooth'});
   };
   nav.addEventListener('click',e=>{const button=e.target.closest('[data-page]');if(button)go(button.dataset.page);});
   shortcuts.addEventListener('click',e=>{const button=e.target.closest('[data-go]');if(button)go(button.dataset.go);});
-  $('startTransferBtn').addEventListener('click',()=>{
-    if(!state.wallets.length){toast('أنشئ محفظة أولًا للبدء.');go('wallets');return;}
-    openAction('transfer',state.wallets[0].id);
-  });
   $('accountLogout').addEventListener('click',()=>logout());
 })();
