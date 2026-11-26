@@ -135,9 +135,13 @@ function renderWallets() {
   root.innerHTML = state.wallets.map(w => `<article class="wallet-card">
     <div class="wallet-head"><span class="currency-icon">${escapeHtml(w.currency.slice(0,2))}</span><span class="wallet-currency">${escapeHtml(w.currency)} · محفظة تجريبية</span></div>
     <div class="wallet-balance">${money(w.balanceMinor)} <small>${escapeHtml(w.currency)}</small></div>
-    <div class="wallet-id">ID: ${escapeHtml(w.id)}</div>
+    <div class="wallet-id"><span dir="ltr">ID: ${escapeHtml(w.id)}</span> <button type="button" class="outline-btn" data-copy-wallet="${escapeHtml(w.id)}">نسخ المعرّف</button></div>
     <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل تجريبي</button></div>
   </article>`).join('');
+  root.querySelectorAll('[data-copy-wallet]').forEach(btn => btn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(btn.dataset.copyWallet); toast('تم نسخ معرّف المحفظة.'); }
+    catch { window.prompt('انسخ معرّف المحفظة:', btn.dataset.copyWallet); }
+  }));
   root.querySelectorAll('[data-credit]').forEach(btn => btn.addEventListener('click', () => openAction('credit', btn.dataset.credit)));
   root.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => openAction('transfer', btn.dataset.send)));
 }
@@ -211,7 +215,7 @@ if (state.token) {
   const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['cards','▤','البطاقات'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['account','◎','حسابي'],['support','?','المساعدة'],['settings','⚙','الإعدادات']];
   definitions.forEach(([key,icon,label],i)=>{
     const button=document.createElement('button'); button.type='button'; button.className='nav-item'+(i===0?' active':'');
-    button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
+    button.dataset.page=key; if(i===0)button.setAttribute('aria-current','page'); button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
   });
   notice?.after(nav);
   const makePage=(key)=>{const section=document.createElement('section');section.className='page-view'+(key==='home'?' active':'');section.dataset.view=key;return section;};
@@ -266,8 +270,8 @@ if (state.token) {
   };
   pages.cards.innerHTML=intro('بطاقات SApay','إدارة البطاقات الافتراضية','نماذج تفاعلية لأغراض اختبار الواجهة فقط. لا توجد بطاقات صادرة أو أرقام بطاقات أو عمليات دفع أو ربط Visa/Mastercard أو Apple Pay.')+
     '<div class="virtual-card-grid" aria-label="نماذج البطاقات الافتراضية">'+
-    '<article class="virtual-card-manager" data-demo-card="visa"><div class="virtual-payment-card"><div class="virtual-card-top"><strong>SApay</strong><span>VISA · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="visa">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="visa">تجميد تجريبي</button></div></article>'+
-    '<article class="virtual-card-manager" data-demo-card="mastercard"><div class="virtual-payment-card secondary"><div class="virtual-card-top"><strong>SApay</strong><span>Mastercard · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="mastercard">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="mastercard">تجميد تجريبي</button></div></article>'+
+    '<article class="virtual-card-manager" data-demo-card="visa"><div class="virtual-payment-card"><div class="virtual-card-top"><strong>SApay</strong><span>VISA · نموذج توضيحي</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY · تجريبي</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="visa">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="visa">تجميد تجريبي</button></div></article>'+
+    '<article class="virtual-card-manager" data-demo-card="mastercard"><div class="virtual-payment-card secondary"><div class="virtual-card-top"><strong>SApay</strong><span>Mastercard · نموذج توضيحي</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY · تجريبي</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="mastercard">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="mastercard">تجميد تجريبي</button></div></article>'+
     '</div><section class="panel demo-card-details" id="demoCardDetails" aria-live="polite"><h3>تفاصيل البطاقة</h3><p>اختر «تفاصيل البطاقة» لعرض نوع النموذج وحالته. لا توجد بيانات بطاقة حقيقية أو CVV أو تاريخ انتهاء.</p></section>'+
     '<section class="panel demo-card-history"><h3>سجل إجراءات البطاقات التجريبية</h3><div id="demoCardHistory" aria-live="polite"></div></section>'+
     '<p class="virtual-card-warning">التجميد وإلغاء التجميد يغيّران حالة المعاينة على هذا المتصفح فقط، ولا يؤثران على أي بطاقة أو رصيد. السجل يخص إجراءات الواجهة وليس معاملات مالية.</p>';
@@ -294,7 +298,7 @@ if (state.token) {
   });
   renderDemoCards();
   pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
-    '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
+    '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>حدد المصدر والمستلم والمبلغ في نموذج التحويل.</p><button id="startTransferBtn" class="primary" type="button">فتح نموذج التحويل</button></div></div>'+
     '<div class="notice">لا يدعم هذا النموذج التحويل إلى بنك أو محفظة خارجية، ولا ينفّذ أي حركة مالية حقيقية.</div>';
   pages.services.innerHTML=intro('منظومة خدمات السودان','الخدمات والمدفوعات','استعرض الجهات السودانية والخدمات المستهدفة. جميع خيارات السداد والربط معروضة للتعريف والتخطيط فقط، وليست متاحة للدفع الحقيقي.')+
     '<div class="service-grid">'+
@@ -354,7 +358,7 @@ if (state.token) {
     '</div><div class="notice">لا تغيّر هذه الإعدادات طريقة معالجة البيانات أو صلاحيات الحساب. لا تدخل معلومات مالية أو شخصية حساسة في النسخة التجريبية.</div>';
   definitions.forEach(([key])=>root.append(pages[key]));
   const go=(key)=>{
-    definitions.forEach(([name])=>{pages[name].classList.toggle('active',name===key);nav.querySelector('[data-page="'+name+'"]').classList.toggle('active',name===key);});
+    definitions.forEach(([name])=>{pages[name].classList.toggle('active',name===key);const button=nav.querySelector('[data-page="'+name+'"]');button.classList.toggle('active',name===key);if(name===key)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
     if(key==='history') loadHistory();
     if(key==='account') $('accountEmail').textContent=state.user?.email||'حسابك التجريبي';
     window.scrollTo({top:0,behavior:'smooth'});
