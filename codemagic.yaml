@@ -1,0 +1,31 @@
+workflows:
+  sapay-ios-beta:
+    name: SApay iOS Beta IPA
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    working_directory: "sapay-core 15/mobile"
+    integrations:
+      app_store_connect: SApay Codemagic
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.saadaligroup.sapay
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 22
+    scripts:
+      - name: Install dependencies and generate Capacitor iOS project
+        script: |
+          npm ci
+          npm run cap:add:ios
+          npm run cap:sync
+      - name: Configure automatic signing
+        script: |
+          xcode-project use-profiles
+      - name: Build signed App Store IPA
+        script: |
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME" --config Release
+    artifacts:
+      - "build/ios/ipa/*.ipa"
+      - "/tmp/xcodebuild_logs/*.log"
