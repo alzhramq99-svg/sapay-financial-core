@@ -95,4 +95,29 @@ describe('Face ID and logout in public/app.js (issue #58)', () => {
     await app.flush();
     expect(biometric.clearCredentials).toHaveBeenCalled();
   });
+
+  it('does not keep a signed-out session alive or claim success when deleting the Face ID credential fails (no credential leakage)', async () => {
+    const biometric = {
+      isNative: true,
+      isAvailable: jest.fn(async () => true),
+      hasCredentials: jest.fn(async () => true),
+      saveCredentials: jest.fn(async () => undefined),
+      getCredentials: jest.fn(),
+      clearCredentials: jest.fn(async () => { throw new Error('Keychain write busy'); }),
+    };
+    const app = loadApp({ biometric });
+    await app.login('alice@example.test', 'token-alice', 'user-a');
+    await app.serveDashboard('token-alice', []);
+    await app.byId('logoutBtn').dispatch('click');
+    await app.flush();
+
+    expect(biometric.clearCredentials).toHaveBeenCalled();
+    // The sign-out itself must still complete even though the native delete failed.
+    expect(app.storage.has('sapay_access_token')).toBe(false);
+    expect(app.byId('appView').hidden).toBe(true);
+    expect(app.byId('authView').hidden).toBe(false);
+    // The UI must not tell the user the sign-out was a plain success: that
+    // would hide the fact that the old credential may still be usable.
+    expect(app.byId('toast').textContent).not.toBe('تم تسجيل الخروج.');
+  });
 });

@@ -7,6 +7,11 @@ import { createContext, runInContext } from 'node:vm';
 type Listener = (event: any) => unknown;
 
 export class FakeElement {
+  // Shared with the document's getElementById registry for the lifetime of
+  // one loadApp() call, so that querySelector('#id') resolves to the same
+  // element as document.getElementById('id') -- as it does in a real DOM --
+  // instead of a disconnected per-container stand-in.
+  static registry: Map<string, FakeElement> | null = null;
   id = '';
   className = '';
   innerHTML = '';
@@ -45,6 +50,13 @@ export class FakeElement {
   getAttribute(name: string): string | null { return this.attributes[name] ?? null; }
   removeAttribute(name: string): void { delete this.attributes[name]; }
   querySelector(selector: string): FakeElement {
+    const idMatch = /^#([\w-]+)$/.exec(selector);
+    if (idMatch && FakeElement.registry) {
+      const id = idMatch[1]!;
+      let found = FakeElement.registry.get(id);
+      if (!found) { found = new FakeElement(); found.id = id; FakeElement.registry.set(id, found); }
+      return found;
+    }
     let found = this.selectorCache.get(selector);
     if (!found) { found = new FakeElement(); this.selectorCache.set(selector, found); }
     return found;
@@ -65,6 +77,7 @@ export type FetchCall = { url: string; init: any; resolve: (r: FakeResponse) => 
 
 export function loadApp(options: { biometric?: unknown } = {}) {
   const elements = new Map<string, FakeElement>();
+  FakeElement.registry = elements;
   const created: FakeElement[] = [];
   const storage = new Map<string, string>();
   const pending: FetchCall[] = [];
