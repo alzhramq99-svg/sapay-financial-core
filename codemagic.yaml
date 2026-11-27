@@ -9,7 +9,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.saadaligroup.sapay
+        bundle_identifier: Com.saadaligroup.sapay
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
