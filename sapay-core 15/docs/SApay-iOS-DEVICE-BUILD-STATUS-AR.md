@@ -1,43 +1,39 @@
-# تحديث بناء نسخة SApay للآيفون
+# حالة جاهزية SApay لنسخة iPhone التجريبية
 
-**التاريخ:** 11 نوفمبر 2026  
+**تاريخ التدقيق:** 27 نوفمبر 2026  
 **المستودع:** `alzhramq99-svg/sapay-financial-core`  
-**فرع الإصدار:** `deploy/render-staging`
+**فرع الأساس لهذا التحديث:** `deploy/render-staging`
 
-## النتيجة المؤكدة
+## الخلاصة
 
-نجح GitHub Actions في تشغيل workflow باسم `iOS packaging validation`، رقم التشغيل **14**، ومعرّف التشغيل `42906058848`.
+المشروع الحالي يحتوي على غلاف Capacitor iOS يعبّئ واجهة SApay الموجودة. الأدلة المتاحة لا تثبت حتى الآن وجود IPA موقّع ومثبت على iPhone حقيقي أو بناء مرفوع إلى TestFlight. لذلك لا توصف النسخة بأنها قابلة للتثبيت عبر TestFlight بعد.
 
-جميع خطوات المهمة انتهت بنجاح، بما فيها:
-- تثبيت اعتماديات Capacitor وتوليد مشروع iOS.
-- بناء تطبيق المحاكي ورفع ملفه.
-- بناء هدف جهاز iPhone الحقيقي باستخدام `iphoneos` دون توقيع.
-- رفع ملف تطبيق الجهاز غير الموقع.
+نسخة Beta تجريبية فقط: لا تستقبل أموالاً حقيقية ولا تنفذ تحويلات حقيقية.
 
-## الملفات الناتجة
+## ما تأكد من GitHub
 
-| Artifact | الحجم | الصلاحية حتى |
-|---|---:|---|
-| `sapay-ios-simulator` | 1,220,961 bytes | 17 نوفمبر 2026 |
-| `sapay-ios-device-unsigned` | 739,452 bytes | 17 نوفمبر 2026 |
+- PR #40 الخاص بالتسجيل بدعوات أحادية الاستخدام أُغلق بالدمج في 22 نوفمبر، لكن دمجه كان داخل سلسلة الفروع؛ لا يكفي وحده لإثبات وصول التغيير إلى `deploy/render-staging` أو `main`.
+- PR #42 يتضمن إصلاحاً لاحقاً لحالة غياب سر JWT واختبارات قبول iPhone. أبلغ وصفه عن نجاح CI، لكنه ما زال مفتوحاً كطلب سحب مسودة.
+- PR #31 يوحّد مسار Capacitor وملفات iOS مع `main`. ما زال مفتوحاً. شجرة `main` التي فُحصت لا تحتوي مجلد `sapay-core 15/mobile` بينما توجد عليه إشارات من ملفات بناء iOS؛ لا تعتبر بناءات ذلك الفرع دليلاً على جاهزية `main`.
+- PR #44 يعالج اختيار عنوان API في WebView الأصلي، وPR #46 يضيف فحوص PWA. كلاهما ما زال مفتوحاً ضمن سلسلة فروع.
+- PR #57 لتحسين تخطيط الهاتف والتنقل مفتوح على أساس `deploy/render-staging`، ووصفه يذكر أن قبول Android/iOS على جهاز فعلي ما زال مطلوباً.
+- تقرير بناء 11 نوفمبر كان عن تطبيق جهاز غير موقّع. انتهت صلاحية ملفاته في 17 نوفمبر؛ ولا يثبت ذلك إمكانية التثبيت أو TestFlight حالياً.
 
-رابط التشغيل: https://github.com/alzhramq99-svg/sapay-financial-core/actions/runs/42906058848
+روابط المتابعة: [PR #31](https://github.com/alzhramq99-svg/sapay-financial-core/pull/31)، [PR #40](https://github.com/alzhramq99-svg/sapay-financial-core/pull/40)، [PR #42](https://github.com/alzhramq99-svg/sapay-financial-core/pull/42)، [PR #44](https://github.com/alzhramq99-svg/sapay-financial-core/pull/44)، [PR #46](https://github.com/alzhramq99-svg/sapay-financial-core/pull/46)، [PR #57](https://github.com/alzhramq99-svg/sapay-financial-core/pull/57).
 
-## دمج التغيير
+## فجوات بناء iOS/TestFlight التي تتطلب معالجة
 
-تم دمج PR #7 بعنوان **Build unsigned SApay iPhone device app in CI** إلى `deploy/render-staging` بنجاح عبر commit:
-`693d9330e50a593d379cb89eb8b907e80d517307`
+1. `sapay-core 15/mobile/package.json` يشترط Node.js 22 أو أحدث، بينما Workflow في `.github/workflows/ios-testflight.yml` يثبت Node.js 20. وحّد النسخة قبل الاعتماد على تشغيل إصدار.
+2. Workflow الحالي يبني ويوقّع ثم يرفع إلى TestFlight في الوظيفة نفسها عند التشغيل اليدوي. لا يظهر فيه حاجز موافقة منفصل قبل خطوة الرفع. لا تشغّل خطوة الرفع قبل إضافة حاجز موافقة صريح ومراجعته.
+3. يجب التأكد من أن Workflow يعمل على الفرع الذي يحتوي على مجلد `mobile/` والواجهة الحالية، وأن Bundle ID يظل `com.saadaligroup.sapay`.
+4. العضوية النشطة في Apple Developer، وسجل App Store Connect، وشهادة التوزيع وملف provisioning متطلبات لازمة لبناء IPA موقّع. لا تشارك أسرار التوقيع أو مفاتيح API في Issues أو Pull Requests أو المحادثة.
 
-## ما لا تعنيه هذه النتيجة
+## خطوات القبول المتبقية
 
-ملف `sapay-ios-device-unsigned` هو تطبيق iOS مبني لهدف جهاز حقيقي لكنه **غير موقع**. ليس IPA قابلًا للتثبيت على iPhone ولا يمكن رفعه إلى TestFlight.
+1. توحيد مسار التطبيق وملفات CI في طلب سحب قابل للمراجعة، وتشغيل فحوصه على الفرع الصحيح.
+2. التحقق من تفعيل عضوية Apple Developer ومن إعدادات App Store Connect خارج المستودع.
+3. إنشاء IPA موقّع من الفرع المعتمد فقط، بعد اعتماد إجراء الرفع وحاجز الموافقة.
+4. تثبيت التطبيق على iPhone فعلي والتحقق من تسجيل الدخول والتنقل ومناطق الشاشة وFace ID، بما فيها الإلغاء والرجوع إلى كلمة المرور.
+5. تسجيل نتيجة قبول الجهاز برقم طراز iPhone وإصدار iOS، مع إبقاء أي فحوص لم تتم بحالة «معلّقة».
 
-## بوابة الإصدار المتبقية
-
-1. تفعيل عضوية Apple Developer.
-2. إنشاء App ID وسجل SApay في App Store Connect.
-3. إنشاء شهادة Apple Distribution وملف App Store provisioning profile.
-4. إعداد أسرار GitHub Actions السبعة دون مشاركتها في المحادثة أو المستودع.
-5. تشغيل workflow `SApay iOS TestFlight build` والتحقق من IPA موقع وظهور البناء في TestFlight.
-
-**حالة Apple:** حتى آخر تحديث، استلام المستندات وفتح الحالة لا يثبتان تفعيل العضوية. لا تكرر الدفع.
+لا يُعد نجاح CI أو بناء المحاكي أو ملف الجهاز غير الموقّع اختباراً على iPhone فعلياً. ولا يعني تحديث هذا الملف الدمج أو النشر أو الرفع إلى TestFlight.
