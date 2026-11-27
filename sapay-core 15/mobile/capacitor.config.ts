@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.saadaligroup.sapay',
+  appId: 'Com.saadaligroup.sapay',
   appName: 'SApay',
   webDir: 'www',
   bundledWebRuntime: false,
