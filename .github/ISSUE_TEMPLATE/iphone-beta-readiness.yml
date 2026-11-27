@@ -1,0 +1,70 @@
+name: iPhone Beta readiness or device result
+description: Record a real-device acceptance result or a blocker on the existing SApay iPhone beta path.
+title: "[iPhone Beta]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SApay is an experimental demo. It does not accept real funds or perform real transfers. Never include passwords, invite codes, signing materials, API keys, or tester personal data in this issue.
+  - type: dropdown
+    id: check_type
+    attributes:
+      label: Check or blocker
+      options:
+        - Physical iPhone acceptance
+        - Capacitor or signing build
+        - TestFlight setup
+        - Login or registration
+        - Face ID
+        - Navigation or layout
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: iPhone model and iOS version
+      description: Required for physical-device results. Use "Not tested on a device" when this is a build-only blocker.
+      placeholder: "iPhone model — iOS version"
+    validations:
+      required: true
+  - type: dropdown
+    id: build_type
+    attributes:
+      label: Build or install route
+      options:
+        - Safari/PWA
+        - Capacitor development build
+        - Signed IPA installed directly
+        - TestFlight
+        - CI-only; no device install
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and observed result
+      description: Include only the steps needed to reproduce. Redact account and tester details.
+      placeholder: "1. …
+2. …
+Observed: …"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result and remaining blocker
+      placeholder: "Expected: …
+Blocker or pending check: …"
+    validations:
+      required: true
+  - type: checkboxes
+    id: beta_safety
+    attributes:
+      label: Beta safety
+      options:
+        - label: I confirm no real money or real transfer was involved.
+          required: true
+        - label: I removed secrets, invitation codes, and tester personal data from this report.
+          required: true
