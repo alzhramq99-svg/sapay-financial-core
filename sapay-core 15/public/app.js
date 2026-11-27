@@ -1,6 +1,6 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
-const state = { token: sessionStorage.getItem('sapay_access_token') || '', user: null, wallets: [], authMode: 'login' };
+const state = { token: sessionStorage.getItem('sapay_access_token') || '', user: null, wallets: [], authMode: 'login', session: 0 };
 const money = (minor) => { try { return BigInt(minor || '0').toLocaleString('en-US'); } catch { return '0'; } };
 const headers = () => ({ 'Content-Type': 'application/json', ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}) });
 // Capacitor iOS WebViews commonly use https://localhost, not capacitor://. Detect the native bridge explicitly.
@@ -18,6 +18,10 @@ function apiOrigin() {
 }
 async function api(path, options = {}) {
   const origin = apiOrigin();
+  // Snapshot the token this specific request is authenticated with, so a
+  // response that arrives after the user has signed out (or a different user
+  // has signed in) cannot act on the session that is current when it lands.
+  const requestToken = state.token;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
   let response;
@@ -28,7 +32,7 @@ async function api(path, options = {}) {
   } finally { clearTimeout(timer); }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (response.status === 401 && state.token) logout(false);
+    if (response.status === 401 && requestToken && requestToken === state.token) logout(false);
     throw new Error(data.message || 'تعذر إكمال الطلب. حاول مرة أخرى.');
   }
   return data;
@@ -100,7 +104,26 @@ $('authForm').addEventListener('submit', async (event) => {
   finally { button.disabled = false; }
 });
 function logout(show = true) {
+  // Bump the session generation so any in-flight request started by this (or
+  // an earlier) session can detect, once it resolves, that it is stale and
+  // must not touch the DOM or state of whichever session is current by then.
+  state.session += 1;
+  // Only an explicit, user-initiated sign-out removes the on-device Face ID
+  // credential; an automatic logout (expired/invalid token) does not imply
+  // the user wants Face ID disabled.
+  if (show && window.SApayBiometric?.isNative) {
+    window.SApayBiometric.clearCredentials().catch(() => {
+      toast('تعذر حذف بيانات Face ID من هذا الجهاز بالكامل. يمكنك إزالتها من إعدادات الجهاز.');
+    });
+  }
   state.token = ''; state.user = null; state.wallets = []; sessionStorage.removeItem('sapay_access_token');
+  $('password').value = ''; $('password').type = 'password';
+  $('togglePassword').textContent = 'إظهار كلمة المرور'; $('togglePassword').setAttribute('aria-pressed','false');
+  $('wallets').replaceChildren(); $('history').replaceChildren(); $('totalBalance').textContent = '—';
+  if ($('accountEmail')) $('accountEmail').textContent = '—';
+  for (const id of ['actionDialog','walletDialog']) { if ($(id)?.open) $(id).close(); }
+  for (const id of ['actionForm','walletForm','inlineTransfer','serviceSimulation']) $(id)?.reset();
+  $('simReview')?.replaceChildren(); $('inlineSource')?.replaceChildren();
   $('appView').hidden = true; $('authView').hidden = false; $('logoutBtn').hidden = true;
   if (show) toast('تم تسجيل الخروج.');
 }
@@ -111,20 +134,29 @@ async function showDashboard() {
   await refreshData();
 }
 async function refreshData() {
+  // Capture which session started this refresh; if logout (or a new login)
+  // happens while these requests are in flight, the generation will have
+  // moved on by the time they resolve and the stale results must be dropped.
+  const session = state.session;
   $('wallets').innerHTML = '<div class="panel loading">جارٍ تحديث المحافظ…</div>';
   try {
-    state.wallets = await api('/demo/wallets');
-    const detailed = await Promise.all(state.wallets.map(async wallet => {
+    const wallets = await api('/demo/wallets');
+    if (state.session !== session) return;
+    const detailed = await Promise.all(wallets.map(async wallet => {
       try { return await api('/demo/wallets/' + encodeURIComponent(wallet.id)); }
-      catch { return { ...wallet, balanceMinor: '0' }; }
+      catch { throw new Error('تعذر تحديث رصيد المحفظة. حاول مرة أخرى.'); }
     }));
+    if (state.session !== session) return;
     state.wallets = detailed;
     renderWallets();
     const totals = {};
     detailed.forEach(w => totals[w.currency] = (BigInt(totals[w.currency] || '0') + BigInt(w.balanceMinor || '0')).toString());
     $('totalBalance').innerHTML = Object.keys(totals).length ? Object.entries(totals).map(([currency, value]) => `<span class="total-currency" dir="ltr"><b>${money(value)}</b> <small>${escapeHtml(currency)}</small></span>`).join('<span class="total-separator">·</span>') : 'لا توجد محافظ بعد';
-    await loadHistory();
+    await loadHistory(session);
   } catch (error) {
+    if (state.session !== session) return;
+    state.wallets = [];
+    $('totalBalance').textContent = 'الرصيد غير متاح حاليًا';
     $('wallets').innerHTML = '<div class="panel empty">' + escapeHtml(error.message) + '</div>';
     if (!state.token) logout(false);
   }
@@ -135,16 +167,22 @@ function renderWallets() {
   root.innerHTML = state.wallets.map(w => `<article class="wallet-card">
     <div class="wallet-head"><span class="currency-icon">${escapeHtml(w.currency.slice(0,2))}</span><span class="wallet-currency">${escapeHtml(w.currency)} · محفظة تجريبية</span></div>
     <div class="wallet-balance">${money(w.balanceMinor)} <small>${escapeHtml(w.currency)}</small></div>
-    <div class="wallet-id">ID: ${escapeHtml(w.id)}</div>
+    <div class="wallet-id"><span dir="ltr">ID: ${escapeHtml(w.id)}</span> <button type="button" class="outline-btn" data-copy-wallet="${escapeHtml(w.id)}">نسخ المعرّف</button></div>
     <div class="wallet-actions"><button class="outline-btn" data-credit="${escapeHtml(w.id)}">شحن تجريبي</button><button class="outline-btn" data-send="${escapeHtml(w.id)}">تحويل تجريبي</button></div>
   </article>`).join('');
+  root.querySelectorAll('[data-copy-wallet]').forEach(btn => btn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(btn.dataset.copyWallet); toast('تم نسخ معرّف المحفظة.'); }
+    catch { window.prompt('انسخ معرّف المحفظة:', btn.dataset.copyWallet); }
+  }));
   root.querySelectorAll('[data-credit]').forEach(btn => btn.addEventListener('click', () => openAction('credit', btn.dataset.credit)));
   root.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => openAction('transfer', btn.dataset.send)));
 }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-async function loadHistory() {
+async function loadHistory(session = state.session) {
   try {
-    const rows = await api('/ledger/journals'); const root = $('history');
+    const rows = await api('/ledger/journals');
+    if (state.session !== session) return;
+    const root = $('history');
     if (!rows.length) { root.innerHTML = '<p class="empty">لا توجد عمليات مسجلة حتى الآن.</p>'; return; }
     root.innerHTML = rows.slice(0, 20).map(row => {
       const credit = row.type === 'DEMO_CREDIT'; const posting = (row.postings || []).find(p => p.side === (credit ? 'CREDIT' : 'CREDIT')) || (row.postings || [])[0];
@@ -152,7 +190,10 @@ async function loadHistory() {
       const date = row.createdAt ? new Date(row.createdAt).toLocaleString('ar') : '';
       return `<div class="history-item"><div><div class="history-title">${credit ? 'شحن رصيد تجريبي' : 'تحويل بين محافظ'}</div><div class="history-meta">${escapeHtml(date)} · ${escapeHtml(row.status || 'مكتمل')}</div></div><div class="history-amount ${credit ? 'credit' : 'debit'}">${money(amount)} ${escapeHtml(currency)}</div></div>`;
     }).join('');
-  } catch (error) { $('history').innerHTML = '<p class="empty">' + escapeHtml(error.message) + '</p>'; }
+  } catch (error) {
+    if (state.session !== session) return;
+    $('history').innerHTML = '<p class="empty">' + escapeHtml(error.message) + '</p>';
+  }
 }
 $('createWalletBtn').addEventListener('click', () => { message('walletMessage',''); $('walletDialog').showModal(); });
 $('walletForm').addEventListener('submit', async (event) => {
@@ -183,13 +224,25 @@ $('actionForm').addEventListener('submit', async (event) => {
       if (!destination) throw new Error('أدخل معرّف محفظة المستلم.');
       if (!uuidPattern.test(destination)) throw new Error('معرّف المحفظة غير صحيح. الصق المعرّف كاملًا أو السطر الذي يبدأ بـ ID:.');
       const source = state.wallets.find(w => w.id === walletId);
-      await api('/transfers', { method:'POST', headers:{'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({ fromWalletId:walletId, toWalletId:destination, amountMinor:amount, currency:source.currency }) });
+      if (!source) throw new Error('اختر محفظة مصدر صالحة.');
+      if (destination.toLowerCase() === walletId.toLowerCase()) throw new Error('اختر محفظة مستلم مختلفة.');
+      if (BigInt(amount) > BigInt(source.balanceMinor || '0')) throw new Error('الرصيد التجريبي غير كافٍ.');
+      const signature = [walletId, destination.toLowerCase(), amount, source.currency].join('|');
+      if (pendingTransferSignature !== signature) { pendingTransferSignature = signature; pendingTransferKey = crypto.randomUUID(); }
+      await api('/transfers', { method:'POST', headers:{'Idempotency-Key':pendingTransferKey}, body:JSON.stringify({ fromWalletId:walletId, toWalletId:destination, amountMinor:amount, currency:source.currency }) });
+      pendingTransferSignature = null; pendingTransferKey = null;
     }
     $('actionDialog').close(); toast('تم تسجيل العملية في قاعدة البيانات التجريبية.'); await refreshData();
   } catch (error) { message('actionMessage', error.message); }
   finally { button.disabled = false; }
 });
 $('refreshBtn').addEventListener('click', refreshData);
+// A network failure never tells the client whether the server already
+// committed the transfer, so a retry of the *same* transfer must reuse the
+// same Idempotency-Key instead of minting a new one (which would let the
+// retry create a second, duplicate transfer if the first actually landed).
+let pendingTransferSignature = null;
+let pendingTransferKey = null;
 if (state.token) {
   api('/demo/wallets').then(async () => { state.user = { email: 'حسابك' }; await showDashboard(); }).catch(() => logout(false));
 }
@@ -211,7 +264,7 @@ if (state.token) {
   const definitions=[['home','⌂','الرئيسية'],['wallets','◈','محافظي'],['cards','▤','البطاقات'],['transfers','⇄','التحويل'],['services','▦','الخدمات'],['history','◷','العمليات'],['account','◎','حسابي'],['support','?','المساعدة'],['settings','⚙','الإعدادات']];
   definitions.forEach(([key,icon,label],i)=>{
     const button=document.createElement('button'); button.type='button'; button.className='nav-item'+(i===0?' active':'');
-    button.dataset.page=key; button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
+    button.dataset.page=key; if(i===0)button.setAttribute('aria-current','page'); button.innerHTML='<span>'+icon+'</span>'+label; nav.append(button);
   });
   notice?.after(nav);
   const makePage=(key)=>{const section=document.createElement('section');section.className='page-view'+(key==='home'?' active':'');section.dataset.view=key;return section;};
@@ -266,8 +319,8 @@ if (state.token) {
   };
   pages.cards.innerHTML=intro('بطاقات SApay','إدارة البطاقات الافتراضية','نماذج تفاعلية لأغراض اختبار الواجهة فقط. لا توجد بطاقات صادرة أو أرقام بطاقات أو عمليات دفع أو ربط Visa/Mastercard أو Apple Pay.')+
     '<div class="virtual-card-grid" aria-label="نماذج البطاقات الافتراضية">'+
-    '<article class="virtual-card-manager" data-demo-card="visa"><div class="virtual-payment-card"><div class="virtual-card-top"><strong>SApay</strong><span>VISA · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="visa">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="visa">تجميد تجريبي</button></div></article>'+
-    '<article class="virtual-card-manager" data-demo-card="mastercard"><div class="virtual-payment-card secondary"><div class="virtual-card-top"><strong>SApay</strong><span>Mastercard · نموذج</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="mastercard">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="mastercard">تجميد تجريبي</button></div></article>'+
+    '<article class="virtual-card-manager" data-demo-card="visa"><div class="virtual-payment-card"><div class="virtual-card-top"><strong>SApay</strong><span>VISA · نموذج توضيحي</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY · تجريبي</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="visa">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="visa">تجميد تجريبي</button></div></article>'+
+    '<article class="virtual-card-manager" data-demo-card="mastercard"><div class="virtual-payment-card secondary"><div class="virtual-card-top"><strong>SApay</strong><span>Mastercard · نموذج توضيحي</span></div><div class="virtual-card-chip" aria-hidden="true">▦</div><div class="virtual-card-number">•••• •••• •••• ••••</div><div class="virtual-card-bottom"><span>DEMO ONLY · تجريبي</span><span data-card-status>غير مفعّلة · نموذج</span></div></div><div class="demo-card-controls"><button type="button" class="subtle-btn demo-card-button" data-card-details="mastercard">تفاصيل البطاقة</button><button type="button" class="subtle-btn demo-card-button" data-card-toggle="mastercard">تجميد تجريبي</button></div></article>'+
     '</div><section class="panel demo-card-details" id="demoCardDetails" aria-live="polite"><h3>تفاصيل البطاقة</h3><p>اختر «تفاصيل البطاقة» لعرض نوع النموذج وحالته. لا توجد بيانات بطاقة حقيقية أو CVV أو تاريخ انتهاء.</p></section>'+
     '<section class="panel demo-card-history"><h3>سجل إجراءات البطاقات التجريبية</h3><div id="demoCardHistory" aria-live="polite"></div></section>'+
     '<p class="virtual-card-warning">التجميد وإلغاء التجميد يغيّران حالة المعاينة على هذا المتصفح فقط، ولا يؤثران على أي بطاقة أو رصيد. السجل يخص إجراءات الواجهة وليس معاملات مالية.</p>';
@@ -293,9 +346,21 @@ if (state.token) {
     toast('تم تحديث حالة نموذج '+cardNames[key]+' داخل هذه الجلسة فقط.');
   });
   renderDemoCards();
-  pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','نفّذ تحويلًا تجريبيًا بين محفظتين داخل بيئة SApay فقط. يجب أن تكون العملة متطابقة.')+
-    '<div class="action-feature panel"><div class="feature-symbol">⇄</div><div><h3>تحويل داخلي تجريبي</h3><p>اختر محفظة المصدر ثم أدخل معرّف محفظة المستلم والمبلغ.</p><button id="startTransferBtn" class="primary" type="button">بدء تحويل تجريبي</button></div></div>'+
-    '<div class="notice">لا يدعم هذا النموذج التحويل إلى بنك أو محفظة خارجية، ولا ينفّذ أي حركة مالية حقيقية.</div>';
+  pages.transfers.innerHTML=intro('حركة الأموال','التحويل بين المحافظ','تحويل تجريبي فقط · لا توجد أموال حقيقية')+
+    '<form id="inlineTransfer" class="panel directory-panel"><label for="inlineSource">محفظة المصدر</label><select id="inlineSource" class="directory-search" required></select><label for="inlineDestination">معرّف محفظة المستلم</label><input id="inlineDestination" class="directory-search" dir="ltr" required autocomplete="off"><label for="inlineAmount">المبلغ (بوحدات الرصيد التجريبي)</label><input id="inlineAmount" class="directory-search" inputmode="numeric" pattern="[1-9][0-9]*" required><button class="primary" type="submit">مراجعة التحويل</button><p id="inlineTransferMessage" role="status"></p></form>';
+  // pages.transfers is not attached to the document yet at this point in
+  // setup (that happens later, in the `root.append(pages[key])` loop below),
+  // so document.getElementById('inlineTransfer') etc. would return null here
+  // and crash the rest of this installer, exactly like the detached card
+  // lookups fixed in PR #26. Query the detached page itself instead.
+  const populateTransfer=()=>{const select=pages.transfers.querySelector('#inlineSource');select.innerHTML=state.wallets.map(w=>'<option value="'+escapeHtml(w.id)+'">'+escapeHtml(w.currency)+' · '+money(w.balanceMinor)+'</option>').join('');};
+  pages.transfers.querySelector('#inlineTransfer').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(!state.wallets.length){message('inlineTransferMessage','أنشئ محفظة أولًا.');return;}
+    openAction('transfer',pages.transfers.querySelector('#inlineSource').value);
+    $('destinationWallet').value=pages.transfers.querySelector('#inlineDestination').value;
+    $('actionAmount').value=pages.transfers.querySelector('#inlineAmount').value;
+  });
   pages.services.innerHTML=intro('منظومة خدمات السودان','الخدمات والمدفوعات','استعرض الجهات السودانية والخدمات المستهدفة. جميع خيارات السداد والربط معروضة للتعريف والتخطيط فقط، وليست متاحة للدفع الحقيقي.')+
     '<div class="service-grid">'+
     '<article class="service-card"><span>▤</span><h3>فواتير الاتصالات</h3><p>زين، سوداني، MTN، كنار</p><em>عرض الجهات</em></article>'+
@@ -324,6 +389,31 @@ if (state.token) {
     '<div class="institution-group"><h4>جامعات حكومية</h4><div id="publicInstitutions" class="institution-chips"></div></div>'+
     '<div class="institution-group"><h4>جامعات أهلية وخاصة وكليات</h4><div id="privateInstitutions" class="institution-chips"></div></div>'+
     '<p class="directory-footnote">الأسماء دليل أولي للتصنيف فقط. لم يتم ربط أي جامعة بنظام تحصيل الرسوم، ويجب اعتماد المؤسسات والبرامج والرسوم رسميًا قبل إتاحة الدفع.</p></section></div>';
+  const bankDirectory=document.createElement('section');
+  bankDirectory.className='directory-panel';
+  bankDirectory.innerHTML='<h3>دليل البنوك السودانية</h3><p>أمثلة تعريفية غير مرتبطة بنظام دفع. لا تمثل قائمة رسمية محدثة.</p><div class="institution-chips">'+['بنك الخرطوم','بنك فيصل الإسلامي السوداني','بنك أم درمان الوطني','بنك النيل','بنك البركة السودان','بنك التضامن الإسلامي','بنك السودان الفرنسي'].map(name=>'<span class="institution-chip">'+escapeHtml(name)+'</span>').join('')+'</div><p>التحويل المصرفي والدولي غير متاحين من هذه الواجهة حاليًا.</p>';
+  pages.services.querySelector('.service-directory').append(bankDirectory);
+  const simulation=document.createElement('section');
+  simulation.className='directory-panel';
+  simulation.innerHTML='<h3>محاكاة الخدمات والتحويلات الخارجية</h3><p>معاينة محلية فقط: لا خصم من المحفظة ولا إرسال لأي جهة.</p><form id="serviceSimulation"><label for="simType">نوع الخدمة</label><select id="simType" class="directory-search"><option value="bank">تحويل مصرفي</option><option value="international">تحويل دولي</option><option value="telecom">اتصالات</option><option value="government">خدمات حكومية</option><option value="education">رسوم تعليمية</option></select><label for="simProvider">الجهة أو الوجهة التجريبية</label><select id="simProvider" class="directory-search" required></select><label for="simAmount">المبلغ الافتراضي</label><input id="simAmount" class="directory-search" inputmode="numeric" pattern="[1-9][0-9]*" required><button class="primary" type="submit">مراجعة المحاكاة</button></form><div id="simReview" aria-live="polite"></div>';
+  pages.services.prepend(simulation);
+  const simOptions={bank:['بنك الخرطوم','بنك فيصل الإسلامي','بنك أم درمان الوطني','بنك النيل'],international:['مصر','السعودية','الإمارات'],telecom:['زين','سوداني','MTN','كنار'],government:['الجوازات','المرور','السجل المدني'],education:['جامعة الخرطوم','جامعة السودان للعلوم والتكنولوجيا','جامعة الجزيرة']};
+  // Same detached-page caveat as the transfers form above: pages.services is
+  // not attached to the document yet, so these lookups must stay scoped to
+  // pages.services rather than going through document.getElementById.
+  const simRefresh=()=>{pages.services.querySelector('#simProvider').replaceChildren(...simOptions[pages.services.querySelector('#simType').value].map(name=>new Option(name,name)));pages.services.querySelector('#simReview').replaceChildren();};
+  pages.services.querySelector('#simType').addEventListener('change',simRefresh);simRefresh();
+  pages.services.querySelector('#serviceSimulation').addEventListener('input',()=>pages.services.querySelector('#simReview').replaceChildren());
+  pages.services.querySelector('#serviceSimulation').addEventListener('submit',e=>{
+    e.preventDefault();
+    const amount=pages.services.querySelector('#simAmount').value;
+    if(!/^[1-9][0-9]*$/.test(amount))return;
+    const review=pages.services.querySelector('#simReview');review.replaceChildren();
+    const details=document.createElement('p');details.textContent=pages.services.querySelector('#simProvider').value+' · '+money(amount)+' وحدة افتراضية · لا خصم أو إرسال.';
+    const confirm=document.createElement('button');confirm.type='button';confirm.className='primary';confirm.textContent='تأكيد المعاينة التجريبية';
+    confirm.addEventListener('click',()=>{review.textContent='اكتملت المحاكاة المحلية فقط. لم تُنفذ معاملة مالية.';},{once:true});
+    review.append(details,confirm);
+  });
   const publicInstitutions=['جامعة الخرطوم','جامعة السودان للعلوم والتكنولوجيا','جامعة النيلين','جامعة بحري','جامعة أم درمان الإسلامية','جامعة الجزيرة','جامعة وادي النيل','جامعة شندي','جامعة كسلا','جامعة القضارف','جامعة البحر الأحمر','جامعة دنقلا','جامعة سنار','جامعة النيل الأزرق','جامعة كردفان','جامعة الفاشر','جامعة زالنجي','جامعة نيالا','جامعة بخت الرضا','جامعة القرآن الكريم والعلوم الإسلامية','جامعة الإمام المهدي','جامعة غرب كردفان','جامعة الدلنج','جامعة شرق كردفان','جامعة الجنينة','جامعة الضعين','جامعة المناقل','جامعة مروي التكنولوجية','جامعة السودان المفتوحة'];
   const privateInstitutions=['جامعة الأحفاد للبنات','جامعة السودان العالمية','جامعة أم درمان الأهلية','جامعة العلوم والتقانة','جامعة العلوم الطبية والتكنولوجيا','جامعة المستقبل','جامعة المغتربين','جامعة ود مدني الأهلية','الجامعة الوطنية','جامعة المشرق','جامعة الرازي','الجامعة العربية المفتوحة','جامعة قاردن سيتي','جامعة ابن سينا','جامعة الشيخ عبدالله البدري','جامعة النيل','جامعة البيان','جامعة النصر','جامعة الشرق للعلوم والتكنولوجيا','جامعة بورتسودان الأهلية','كلية شرق النيل','كلية المدار','كلية السودان الجامعية للبنات','أكاديمية السودان للعلوم المصرفية والمالية','كلية كمبوني للعلوم والتكنولوجيا','كلية الإمام الهادي','كلية غرب النيل','كلية بحري الأهلية','كلية أم درمان للعلوم والتكنولوجيا','كلية اليرموك','كلية الكاملين للعلوم والتقانة','كلية النور للعلوم والتكنولوجيا','كلية ستارز للعلوم الطبية والتقنية','كلية الحكمة للعلوم والتكنولوجيا','كلية النهضة','كلية الصفوة','كلية السلامة للعلوم والتكنولوجيا','كلية الريادة','كلية الأفق للعلوم والتكنولوجيا','كلية مكة التقنية لطب العيون','كلية نبتة','كلية الجزيرة للعلوم الطبية والتكنولوجيا','كلية الفجر للعلوم والتكنولوجيا','كلية فكتوريا للعلوم والتكنولوجيا','كلية القضارف للعلوم والتكنولوجيا','كلية المعرفة للعلوم والتكنولوجيا','كلية رويال للعلوم والتكنولوجيا','كلية شمال كردفان','كلية دار العلوم والتكنولوجيا','كلية المدائن للعلوم الطبية والتكنولوجيا'];
   const renderInstitutions=(items,root)=>{root.innerHTML=items.map(name=>'<button type="button" class="institution-chip" data-institution="'+escapeHtml(name)+'">'+escapeHtml(name)+'</button>').join('');};
@@ -354,16 +444,13 @@ if (state.token) {
     '</div><div class="notice">لا تغيّر هذه الإعدادات طريقة معالجة البيانات أو صلاحيات الحساب. لا تدخل معلومات مالية أو شخصية حساسة في النسخة التجريبية.</div>';
   definitions.forEach(([key])=>root.append(pages[key]));
   const go=(key)=>{
-    definitions.forEach(([name])=>{pages[name].classList.toggle('active',name===key);nav.querySelector('[data-page="'+name+'"]').classList.toggle('active',name===key);});
+    definitions.forEach(([name])=>{pages[name].classList.toggle('active',name===key);const button=nav.querySelector('[data-page="'+name+'"]');button.classList.toggle('active',name===key);if(name===key)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
+    if(key==='transfers') populateTransfer();
     if(key==='history') loadHistory();
     if(key==='account') $('accountEmail').textContent=state.user?.email||'حسابك التجريبي';
     window.scrollTo({top:0,behavior:'smooth'});
   };
   nav.addEventListener('click',e=>{const button=e.target.closest('[data-page]');if(button)go(button.dataset.page);});
   shortcuts.addEventListener('click',e=>{const button=e.target.closest('[data-go]');if(button)go(button.dataset.go);});
-  $('startTransferBtn').addEventListener('click',()=>{
-    if(!state.wallets.length){toast('أنشئ محفظة أولًا للبدء.');go('wallets');return;}
-    openAction('transfer',state.wallets[0].id);
-  });
   $('accountLogout').addEventListener('click',()=>logout());
 })();
