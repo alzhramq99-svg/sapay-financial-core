@@ -14,7 +14,7 @@ export class PostgresLedgerService {
 
   private normalizeWalletId(value: unknown, fieldName: string): string {
     const normalized = typeof value === 'string'
-      ? value.trim().replace(/^ID\s*:\s*/i, '').trim()
+      ? value.trim().replace(/^ID\s*:\s*/i, '').trim().toLowerCase()
       : '';
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidPattern.test(normalized)) {
@@ -109,7 +109,10 @@ export class PostgresLedgerService {
       );
       if (existing.rowCount) {
         const row = existing.rows[0];
-        if (row.metadata?.walletId !== walletId || row.amount_minor !== amount) {
+        const priorWalletId = typeof row.metadata?.walletId === 'string'
+          ? row.metadata.walletId.trim().toLowerCase()
+          : '';
+        if (priorWalletId !== walletId || row.amount_minor !== amount) {
           throw new ConflictException('reference already used with different details');
         }
         return { journalEntryId: row.id, walletId, amountMinor: amount, replay: true };
