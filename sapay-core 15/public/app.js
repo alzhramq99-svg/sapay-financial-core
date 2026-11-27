@@ -101,6 +101,12 @@ $('authForm').addEventListener('submit', async (event) => {
 });
 function logout(show = true) {
   state.token = ''; state.user = null; state.wallets = []; sessionStorage.removeItem('sapay_access_token');
+  $('password').value = ''; $('password').type = 'password';
+  $('togglePassword').textContent = 'إظهار كلمة المرور'; $('togglePassword').setAttribute('aria-pressed','false');
+  $('wallets').replaceChildren(); $('history').replaceChildren(); $('totalBalance').textContent = '—';
+  for (const id of ['actionDialog','walletDialog']) { if ($(id)?.open) $(id).close(); }
+  for (const id of ['actionForm','walletForm','inlineTransfer','serviceSimulation']) $(id)?.reset();
+  $('simReview')?.replaceChildren(); $('inlineSource')?.replaceChildren();
   $('appView').hidden = true; $('authView').hidden = false; $('logoutBtn').hidden = true;
   if (show) toast('تم تسجيل الخروج.');
 }
@@ -116,7 +122,7 @@ async function refreshData() {
     state.wallets = await api('/demo/wallets');
     const detailed = await Promise.all(state.wallets.map(async wallet => {
       try { return await api('/demo/wallets/' + encodeURIComponent(wallet.id)); }
-      catch { return { ...wallet, balanceMinor: '0' }; }
+      catch { throw new Error('تعذر تحديث رصيد المحفظة. حاول مرة أخرى.'); }
     }));
     state.wallets = detailed;
     renderWallets();
@@ -125,6 +131,8 @@ async function refreshData() {
     $('totalBalance').innerHTML = Object.keys(totals).length ? Object.entries(totals).map(([currency, value]) => `<span class="total-currency" dir="ltr"><b>${money(value)}</b> <small>${escapeHtml(currency)}</small></span>`).join('<span class="total-separator">·</span>') : 'لا توجد محافظ بعد';
     await loadHistory();
   } catch (error) {
+    state.wallets = [];
+    $('totalBalance').textContent = 'الرصيد غير متاح حاليًا';
     $('wallets').innerHTML = '<div class="panel empty">' + escapeHtml(error.message) + '</div>';
     if (!state.token) logout(false);
   }
