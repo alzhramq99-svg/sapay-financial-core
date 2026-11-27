@@ -2,6 +2,12 @@ name: SApay iOS TestFlight build
 
 on:
   workflow_dispatch:
+    inputs:
+      upload_to_testflight:
+        description: Upload the signed build to TestFlight (leave false to prepare an IPA artifact only)
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -157,6 +163,7 @@ jobs:
           retention-days: 14
 
       - name: Upload build to TestFlight
+        if: ${{ inputs.upload_to_testflight }}
         uses: apple-actions/upload-testflight-build@v1
         with:
           app-path: ${{ env.IPA_PATH }}
