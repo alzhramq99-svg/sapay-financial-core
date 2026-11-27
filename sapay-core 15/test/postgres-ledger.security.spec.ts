@@ -48,6 +48,46 @@ const request = (overrides: Partial<Parameters<PostgresLedgerService['transfer']
   ...overrides,
 });
 
+describe('PostgresLedgerService demo credit replay', () => {
+  it('replays an existing credit when its stored wallet UUID differs only by case', async () => {
+    const statements: Array<{ sql: string; params: unknown[] }> = [];
+    const query = jest.fn(async (sql: string, params: unknown[] = []) => {
+      statements.push({ sql, params });
+      if (sql.includes('SELECT w.id, w.user_id, w.currency')) {
+        return {
+          rowCount: 1,
+          rows: [{ id: FROM, user_id: OWNER, currency: 'SDG', status: 'ACTIVE', account_id: 'acct-' + FROM }],
+        };
+      }
+      if (sql.includes('SELECT j.id, j.metadata, p.amount_minor')) {
+        return {
+          rowCount: 1,
+          rows: [{
+            id: 'journal-demo-credit',
+            metadata: { walletId: FROM.toUpperCase(), environment: 'demo-only' },
+            amount_minor: '100',
+          }],
+        };
+      }
+      return { rowCount: 1, rows: [] };
+    });
+    const database = {
+      withTransaction: jest.fn(async (work: (client: any) => Promise<unknown>) => work({ query })),
+    } as unknown as DatabaseService;
+    const service = new PostgresLedgerService(database);
+
+    const result = await service.demoCredit(FROM.toUpperCase(), OWNER, '100', 'credit-ref');
+
+    expect(result).toEqual({
+      journalEntryId: 'journal-demo-credit',
+      walletId: FROM,
+      amountMinor: '100',
+      replay: true,
+    });
+    expect(statements.some((statement) => statement.sql.includes('INSERT INTO ledger_postings'))).toBe(false);
+  });
+});
+
 describe('PostgresLedgerService transfer security (issue #58)', () => {
   it('completes a valid transfer and stores the response under the idempotency key', async () => {
     const { service, statements } = harness();
