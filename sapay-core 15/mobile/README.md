@@ -21,7 +21,7 @@ The committed lockfile makes dependency installation reproducible. `cap:sync` co
 
 ## Cloud build and TestFlight
 
-The workflow is `.github/workflows/ios-testflight.yml` and is manually dispatched from GitHub Actions. It uses Node.js 22 and `npm ci`, generates the Capacitor iOS project, archives and exports an App Store IPA, stores the IPA as a short-lived workflow artifact, and uploads it to TestFlight. The iOS marketing version is set to 1.0 to match the App Store Connect version record; the build number increments with the GitHub Actions run number.
+The workflow is `.github/workflows/ios-testflight.yml` and is manually dispatched from GitHub Actions. It uses Node.js 22 and `npm ci`, generates the Capacitor iOS project, archives and exports an App Store IPA, and stores the IPA as a short-lived workflow artifact. The `upload_to_testflight` input defaults to false so a run prepares an IPA without uploading it; set it to true only when a TestFlight upload is intended. The iOS marketing version is set to 1.0 to match the App Store Connect version record; the build number increments with the GitHub Actions run number.
 
 Before running the workflow, configure these GitHub Actions repository secrets:
 
