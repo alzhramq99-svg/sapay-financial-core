@@ -9,9 +9,11 @@ import { AppModule } from './app.module';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   app.setGlobalPrefix('api');
-  const vercelProjectOrigins = new Set([
+  const allowedOrigins = new Set([
     'https://sapay-api.onrender.com',
     'https://localhost',
+    'http://localhost',
+    'capacitor://localhost',
     'https://sapay-financial-core.vercel.app',
     'https://sapay-financial-core-saad-ali5.vercel.app',
     'https://sapay-financial-core-git-main-saad-ali5.vercel.app',
@@ -19,7 +21,7 @@ async function bootstrap(): Promise<void> {
   app.enableCors({
     origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
       const isProjectPreview = Boolean(origin && /^https:\/\/sapay-financial-core-[a-z0-9-]+-saad-ali5\.vercel\.app$/.test(origin));
-      if (!origin || vercelProjectOrigins.has(origin) || isProjectPreview) callback(null, true);
+      if (!origin || allowedOrigins.has(origin) || isProjectPreview) callback(null, true);
       else callback(new Error('Origin is not allowed by SApay CORS policy'));
     },
     methods: ['GET', 'POST', 'OPTIONS'],
