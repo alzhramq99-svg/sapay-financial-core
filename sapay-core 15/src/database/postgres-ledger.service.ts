@@ -109,7 +109,10 @@ export class PostgresLedgerService {
       );
       if (existing.rowCount) {
         const row = existing.rows[0];
-        if (row.metadata?.walletId !== walletId || row.amount_minor !== amount) {
+        const priorWalletId = typeof row.metadata?.walletId === 'string'
+          ? row.metadata.walletId.trim().toLowerCase()
+          : '';
+        if (priorWalletId !== walletId || row.amount_minor !== amount) {
           throw new ConflictException('reference already used with different details');
         }
         return { journalEntryId: row.id, walletId, amountMinor: amount, replay: true };
