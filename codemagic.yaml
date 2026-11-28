@@ -11,7 +11,7 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.saadaligroup.sapay
       vars:
-        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 22
     scripts:
@@ -25,7 +25,7 @@ workflows:
           xcode-project use-profiles
       - name: Build signed App Store IPA
         script: |
-          xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME" --config Release
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME" --config Release
     artifacts:
       - "build/ios/ipa/*.ipa"
       - "/tmp/xcodebuild_logs/*.log"
